@@ -104,7 +104,9 @@
   .hm-gradient{height:8px;flex:1;border-radius:4px;max-width:280px}
   .macro-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
   @media(max-width:920px){.macro-grid{grid-template-columns:repeat(2,1fr)}}
-  .mcard{background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:10px 11px}
+  .mcard{background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:10px 11px;position:relative}
+  .mcard-tooltip{display:none;position:absolute;bottom:100%;left:50%;transform:translateX(-50%);background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:8px 10px;font-size:10px;color:var(--muted);width:200px;z-index:100;margin-bottom:8px;line-height:1.3;white-space:normal}
+  .mcard:hover .mcard-tooltip{display:block}
   .mcard-top{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
   .mcard-nm{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
   .mcard-val{font-family:var(--mono);font-size:18px;font-weight:600;margin-top:2px;transition:all 0.2s ease}
@@ -710,7 +712,7 @@ function updateLEDs(){
 /* ---- regime ---- */
 function renderRegime(){const r=STATE.regime||{};const col=r.color==='green'?C.green:r.color==='red'?C.red:C.amber;
   const dot=document.getElementById('regimeDot');dot.style.background=col;dot.style.boxShadow=`0 0 10px ${col}`;
-  const st=document.getElementById('regimeState');st.textContent='';st.style.color=col;
+  const st=document.getElementById('regimeState');st.textContent=r.state||'—';st.style.color=col;
   document.getElementById('regimeScore').textContent=((r.score>=0?'+':'')+(r.score!=null?r.score.toFixed(2):'—'));
 
   const bar=document.getElementById('regimeBar');
@@ -738,7 +740,7 @@ function renderMacro(){const grid=document.getElementById('macroGrid');grid.inne
     'BTC':'Bitcoin. Activo de riesgo, correlacionado con ciclo.'
   };
   (STATE.macro||[]).forEach(m=>{const card=document.createElement('div');card.className='mcard';
-    card.title=tooltips[m.nm]||m.nm;
+    const tip=document.createElement('div');tip.className='mcard-tooltip';tip.textContent=tooltips[m.nm]||m.nm;
     const w=120,h=26,d=m.s||[];
     let pts='';
     if(d.length>0){
@@ -746,10 +748,10 @@ function renderMacro(){const grid=document.getElementById('macroGrid');grid.inne
       pts=d.map((v,i)=>`${(i/(d.length-1||1)*w).toFixed(1)},${(h-((v-mn)/rng)*h).toFixed(1)}`).join(' ');
     }
     const col=m.dir==='up'?C.green:m.dir==='down'?C.red:C.muted;
+    const svg=`<svg class="spark" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none">${pts?`<polyline points="${pts}" fill="none" stroke="${col}" stroke-width="1.4"/>`:d.length===0?'<text x="60" y="16" text-anchor="middle" fill="#8b8fa0" font-size="10">n/d</text>':''}</svg>`;
     card.innerHTML=`<div class="mcard-top"><span class="mcard-nm">${m.nm}</span>
       <span class="mcard-chg ${m.dir==='up'?'up':m.dir==='down'?'down':'flat'}">${m.chg}</span></div>
-      <div class="mcard-val">${m.val}</div>
-      <svg class="spark" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none">${pts?`<polyline points="${pts}" fill="none" stroke="${col}" stroke-width="1.4"/>`:d.length===0?'<text x="60" y="16" text-anchor="middle" fill="#8b8fa0" font-size="10">n/d</text>':''}</svg>`;
+      <div class="mcard-val">${m.val}</div>${svg}${tip.outerHTML}`;
     grid.appendChild(card);});}
 
 /* ---- news ---- */
