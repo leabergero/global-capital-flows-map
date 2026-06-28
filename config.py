@@ -114,6 +114,9 @@ MACRO_CARDS = [
     {"nm": "Brent",         "kind": "quote", "symbol": "BZUSD", "alt": ["BNO"], "unit": "$"},
     {"nm": "UST 10Y",       "kind": "quote", "symbol": "^TNX", "alt": ["IEF"], "unit": "%"},
     {"nm": "Oro",           "kind": "quote", "symbol": "GCUSD", "alt": ["GLD"], "unit": "$"},
+    {"nm": "Plata",         "kind": "quote", "symbol": "SIUSD", "alt": ["SLV"], "unit": "$"},
+    {"nm": "Plata/Oro",     "kind": "ratio", "a": "SIUSD", "b": "GCUSD", "unit": "ratio", "alt_a": ["SLV"], "alt_b": ["GLD"]},
     {"nm": "DXY",           "kind": "quote", "symbol": "^DXY", "alt": ["DX", "UUP"], "unit": ""},
+    {"nm": "VIX",           "kind": "quote", "symbol": "^VIX", "alt": ["VIXY"], "unit": ""},
     {"nm": "BTC",           "kind": "quote", "symbol": "BTCUSD", "unit": "$"},
 ]

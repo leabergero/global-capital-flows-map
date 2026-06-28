@@ -733,10 +733,14 @@ function renderMacro(){const grid=document.getElementById('macroGrid');grid.inne
     'USD / JPY':'Tipo de cambio dólar-yen. Refleja confianza en economía US vs Japón.',
     'IPC EE.UU. a/a':'Índice de Precios al Consumo de USA. Mide inflación interanual.',
     'IPC Eurozona':'Índice de Precios al Consumo de la Eurozona. Medida de inflación europea.',
-    'Crudo WTI':'Precio del barril de crudo West Texas Intermediate. Indicador de ciclo económico.',
-    'Oro spot':'Precio del oro. Activo de refugio, sube con riesgo-off.',
+    'WTI':'Precio del barril de crudo West Texas Intermediate. Indicador de ciclo económico.',
+    'Brent':'Precio del crudo Brent. Referencia internacional de crudo.',
+    'Oro':'Precio del oro. Activo de refugio, sube con riesgo-off.',
+    'Plata':'Precio de la plata. Metal precioso, activo de ciclo.',
+    'Plata/Oro':'Relación plata/oro. Sube en ciclos alcistas, baja con riesgo-off.',
     'UST 10Y':'Rendimiento del bono del Tesoro USA a 10 años. Guía tasas hipotecarias.',
     'DXY':'Índice dólar. Mide fortaleza del USD vs canasta de monedas.',
+    'VIX':'Índice de volatilidad implícita (miedo). Sube en caídas de mercado.',
     'BTC':'Bitcoin. Activo de riesgo, correlacionado con ciclo.'
   };
   (STATE.macro||[]).forEach(m=>{const card=document.createElement('div');card.className='mcard';
