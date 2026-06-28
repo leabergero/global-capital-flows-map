@@ -124,8 +124,9 @@
   .news-src{font-family:var(--mono);font-size:10px;color:var(--muted);margin-top:3px;letter-spacing:.04em}
   .news-time{font-family:var(--mono);font-size:11px;color:var(--muted);white-space:nowrap}
   .foot{margin-top:22px;color:var(--muted);font-size:11px;line-height:1.6;
-    border-top:1px solid var(--border);padding-top:14px}
+    border-top:1px solid var(--border);padding-top:14px;padding-bottom:14px;border-bottom:1px solid var(--border)}
   .foot code{font-family:var(--mono);color:var(--blue);font-size:11px}
+  .copyright{margin-top:8px;color:var(--muted);font-size:10px;text-align:center}
   .two-col{display:grid;grid-template-columns:1.4fr 1fr;gap:16px;margin-bottom:16px}
   @media(max-width:920px){.two-col{grid-template-columns:1fr}}
   button[title]{cursor:help}
@@ -248,6 +249,7 @@
   </div>
 
   <div class="foot" id="foot"></div>
+  <div class="copyright">© 2026 Leandro R. Bergero, Msc Finance & Banking BSM-UPF</div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/pixi.js@8.0.0/dist/pixi.min.js"></script>
@@ -450,79 +452,193 @@ async function initRRGPixi(){
   container.appendChild(rrgApp.canvas);
   return rrgApp;
 }
-function renderRRG(setKey){const data=(STATE.rrg&&STATE.rrg[setKey])||[];
+function renderRRG(setKey){
+  const data=(STATE.rrg&&STATE.rrg[setKey])||[];
   const W=560,H=420,pad=44,xmin=94,xmax=108,ymin=96,ymax=105;
-  const sx=v=>pad+(v-xmin)/(xmax-xmin)*(W-pad*1.5),sy=v=>H-pad-(v-ymin)/(ymax-ymin)*(H-pad*1.6);
-  const cx=sx(100),cy=sy(100);let s=`<rect x="0" y="0" width="${W}" height="${H}" fill="${C.surface}"/>`;
+  const sx=v=>pad+(v-xmin)/(xmax-xmin)*(W-pad*1.5);
+  const sy=v=>H-pad-(v-ymin)/(ymax-ymin)*(H-pad*1.6);
+  const cx=sx(100),cy=sy(100);
+
+  let s=`<rect x="0" y="0" width="${W}" height="${H}" fill="${C.surface}"/>`;
   s+=`<rect x="${cx}" y="0" width="${W-cx}" height="${cy}" fill="${C.green}" opacity="0.05"/>`;
   s+=`<rect x="${cx}" y="${cy}" width="${W-cx}" height="${H-cy}" fill="${C.amber}" opacity="0.05"/>`;
   s+=`<rect x="0" y="${cy}" width="${cx}" height="${H-cy}" fill="${C.red}" opacity="0.05"/>`;
   s+=`<rect x="0" y="0" width="${cx}" height="${cy}" fill="${C.blue}" opacity="0.05"/>`;
   s+=`<line x1="${cx}" y1="8" x2="${cx}" y2="${H-pad}" stroke="${C.border}" stroke-dasharray="3 3"/>`;
   s+=`<line x1="${pad}" y1="${cy}" x2="${W-12}" y2="${cy}" stroke="${C.border}" stroke-dasharray="3 3"/>`;
-  const lab=(x,y,t,c)=>`<text x="${x}" y="${y}" fill="${c}" font-size="10" font-family="monospace" opacity="0.8">${t}</text>`;
-  s+=lab(W-86,18,'LÍDER',C.green)+lab(W-128,H-12,'DEBILITÁNDOSE',C.amber)+lab(pad,H-12,'REZAGADO',C.red)+lab(pad,18,'MEJORANDO',C.blue);
+
+  const lab=(x,y,t,c,isQuad)=>`<text x="${x}" y="${y}" fill="${c}" font-size="10" font-family="monospace" opacity="0.8" ${isQuad?'class="rrg-quad-label" data-quad="'+t+'"':''} style="${isQuad?'cursor:pointer':''}">${t}</text>`;
+  s+=lab(W-86,18,'LÍDER',C.green,true)+lab(W-128,H-12,'DEBILITÁNDOSE',C.amber,true)+lab(pad,H-12,'REZAGADO',C.red,true)+lab(pad,18,'MEJORANDO',C.blue,true);
   s+=`<text x="${W/2}" y="${H-6}" fill="${C.muted}" font-size="10" text-anchor="middle" font-family="monospace">RS-Ratio →</text>`;
   s+=`<text x="12" y="${H/2}" fill="${C.muted}" font-size="10" text-anchor="middle" font-family="monospace" transform="rotate(-90 12 ${H/2})">RS-Momentum →</text>`;
-  data.forEach(d=>{const col=quadColor(d.rs,d.mom);let dp='';(d.path||[]).forEach((p,i)=>{dp+=(i?'L':'M')+sx(p[0]).toFixed(1)+' '+sy(p[1]).toFixed(1)+' ';});
-    dp+=`L${sx(d.rs)} ${sy(d.mom)}`;s+=`<path d="${dp}" fill="none" stroke="${col}" stroke-width="1.4" opacity="0.45"/>`;
-    (d.path||[]).forEach((p,i)=>{s+=`<circle cx="${sx(p[0])}" cy="${sy(p[1])}" r="1.6" fill="${col}" opacity="0.35"/>`;});
-    s+=`<circle cx="${sx(d.rs)}" cy="${sy(d.mom)}" r="5" fill="${col}" stroke="${C.bg}" stroke-width="1.5"/>`;
-    s+=`<text x="${sx(d.rs)+8}" y="${sy(d.mom)+3}" fill="${C.text}" font-size="10.5" font-family="monospace">${d.name}</text>`;});
+
+  const textRects=[];
+  const labelOffsets=[[20,-12],[20,12],[-80,-12],[-80,12],[0,-20],[0,20],[-40,-20],[-40,20],[40,-20],[40,20]];
+
+  data.forEach(d=>{
+    const col=quadColor(d.rs,d.mom);
+    const px=sx(d.rs),py=sy(d.mom);
+
+    // Trayectoria: línea muy delgada
+    let pathData='';
+    (d.path||[]).forEach((p,i)=>{
+      pathData+=(i?'L':'M')+sx(p[0]).toFixed(1)+' '+sy(p[1]).toFixed(1)+' ';
+    });
+    pathData+=`L${px.toFixed(1)} ${py.toFixed(1)}`;
+    s+=`<path d="${pathData}" fill="none" stroke="${col}" stroke-width="0.7" opacity="0.8" stroke-linecap="round" data-sector="${d.name}"/>`;
+
+    // Puntos históricos
+    (d.path||[]).forEach(p=>{
+      s+=`<circle cx="${sx(p[0])}" cy="${sy(p[1])}" r="1.3" fill="${col}" opacity="0.6" data-sector="${d.name}"/>`;
+    });
+
+    // Punto actual: más pequeño (mitad)
+    s+=`<circle cx="${px}" cy="${py}" r="3.5" fill="${col}" stroke="${C.bg}" stroke-width="1.2" opacity="1" data-sector="${d.name}"/>`;
+
+    // Label con detección de colisión inteligente
+    let bestOffset=[20,-12];
+    for(let off of labelOffsets){
+      const testX=px+off[0],testY=py+off[1];
+      let collision=false;
+      for(let rect of textRects){
+        if(!(testX+50<rect.x||testX-50>rect.x+rect.w||testY+6<rect.y||testY-6>rect.y+rect.h)){
+          collision=true;
+          break;
+        }
+      }
+      if(!collision){bestOffset=off;break;}
+    }
+
+    const labelX=px+bestOffset[0],labelY=py+bestOffset[1];
+    s+=`<text x="${labelX}" y="${labelY}" fill="${C.text}" font-size="11" font-family="monospace" font-weight="600" letter-spacing="0.3">${d.name}</text>`;
+    textRects.push({x:labelX-50,y:labelY-10,w:100,h:18});
+  });
 
   const timeline=['5d','4d','3d','2d','hoy'];
-  data.slice(0,1).forEach(d=>{if(d.path&&d.path.length===5){
-    d.path.forEach((p,i)=>{
-      s+=`<text x="${sx(p[0])}" y="${sy(p[1])-8}" fill="${C.muted}" font-size="8" text-anchor="middle" font-family="monospace" opacity="0.6">${timeline[i]}</text>`;
-    });
-  }});
+  data.slice(0,1).forEach(d=>{
+    if(d.path&&d.path.length===5){
+      d.path.forEach((p,i)=>{
+        s+=`<text x="${sx(p[0])}" y="${sy(p[1])-12}" fill="${C.muted}" font-size="8" text-anchor="middle" font-family="monospace" opacity="0.7" font-weight="500">${timeline[i]}</text>`;
+      });
+    }
+  });
+
   elRRG.innerHTML=s;
-  // enableRRGInteractive(W,H,pad,xmin,xmax,ymin,ymax); // Desactivado: bloqueaba labels
+
+  // Habilitar interactividad por cuadrante
+  setTimeout(()=>enableRRGInteractive(W,H,pad,xmin,xmax,ymin,ymax),50);
 }
 
 function enableRRGInteractive(W,H,pad,xmin,xmax,ymin,ymax){
   const svg=document.getElementById('rrg');
   if(!svg)return;
-  const sx=v=>pad+(v-xmin)/(xmax-xmin)*(W-pad*1.5);
-  const sy=v=>H-pad-(v-ymin)/(ymax-ymin)*(H-pad*1.6);
-  const cx=sx(100),cy=sy(100);
 
-  const quads=[
-    {x:cx,y:0,w:W-cx,h:cy,name:'Líder'},
-    {x:cx,y:cy,w:W-cx,h:H-cy,name:'Debilitándose'},
-    {x:0,y:cy,w:cx,h:H-cy,name:'Rezagado'},
-    {x:0,y:0,w:cx,h:cy,name:'Mejorando'}
-  ];
+  let selectedSector=null; // Estado: qué sector está seleccionado
 
-  quads.forEach((q,i)=>{
-    const rect=document.createElementNS('http://www.w3.org/2000/svg','rect');
-    rect.setAttribute('x',q.x);rect.setAttribute('y',q.y);
-    rect.setAttribute('width',q.w);rect.setAttribute('height',q.h);
-    rect.setAttribute('fill','none');rect.setAttribute('pointer-events','all');
-    rect.setAttribute('class','rrg-quad');rect.setAttribute('data-quad',i);
-    rect.style.cursor='pointer';
-    rect.addEventListener('mouseenter',()=>{
-      const colors=['#6dd26d','#e8a847','#ff6b6b','#7a9ec8'];
-      const allTexts=document.querySelectorAll('#rrg text[font-size="10.5"]');
-      allTexts.forEach(t=>{
-        const x=parseFloat(t.getAttribute('x'));
-        const y=parseFloat(t.getAttribute('y'));
-        let isInQuad=false;
-        document.querySelectorAll('#rrg circle[r="5"]').forEach(c=>{
-          const cx=parseFloat(c.getAttribute('cx'));
-          const cy=parseFloat(c.getAttribute('cy'));
-          const fill=c.getAttribute('fill');
-          if(fill===colors[i]&&Math.abs(cx-x-8)<5&&Math.abs(cy-y-3)<5){
-            isInQuad=true;
-          }
-        });
-        t.style.display=isInQuad?'inline':'none';
+  const updateDisplay=(sectorName)=>{
+    const isSelected=sectorName!==null;
+
+    document.querySelectorAll('#rrg path[data-sector]').forEach(p=>{
+      const sector=p.getAttribute('data-sector');
+      if(isSelected){
+        p.style.opacity=sector===sectorName?'1':'0.05';
+        p.style.strokeWidth=sector===sectorName?'1.2':'0.7';
+      }else{
+        p.style.opacity='0.8';
+        p.style.strokeWidth='0.7';
+      }
+    });
+
+    document.querySelectorAll('#rrg circle[data-sector]').forEach(c=>{
+      const sector=c.getAttribute('data-sector');
+      if(isSelected){
+        c.style.opacity=sector===sectorName?'1':'0.05';
+        c.style.r=sector===sectorName?'4':'3.5';
+      }else{
+        c.style.opacity='';
+        c.style.r='';
+      }
+    });
+
+    document.querySelectorAll('#rrg text[font-size="11"]').forEach(t=>{
+      if(isSelected){
+        t.style.display=t.textContent.trim()===sectorName?'inline':'none';
+      }else{
+        t.style.display='inline';
+      }
+    });
+  };
+
+  // Click en paths y círculos para seleccionar sector
+  document.querySelectorAll('#rrg path[data-sector], #rrg circle[data-sector][r="3.5"]').forEach(el=>{
+    el.style.cursor='pointer';
+
+    el.addEventListener('mouseenter',()=>{
+      if(selectedSector===null){
+        const sector=el.getAttribute('data-sector');
+        updateDisplay(sector);
+      }
+    });
+
+    el.addEventListener('mouseleave',()=>{
+      if(selectedSector===null){
+        updateDisplay(null);
+      }
+    });
+
+    el.addEventListener('click',(e)=>{
+      e.stopPropagation();
+      const sector=el.getAttribute('data-sector');
+      if(selectedSector===sector){
+        selectedSector=null;
+      }else{
+        selectedSector=sector;
+      }
+      updateDisplay(selectedSector);
+    });
+  });
+
+  // Click en nombres de cuadrantes para seleccionar todo el cuadrante
+  document.querySelectorAll('#rrg .rrg-quad-label').forEach(label=>{
+    label.addEventListener('click',(e)=>{
+      e.stopPropagation();
+      const quadName=label.getAttribute('data-quad');
+
+      // Obtener todos los sectores en este cuadrante
+      const sectorsInQuad=new Set();
+      document.querySelectorAll('#rrg path[data-sector]').forEach(p=>{
+        const stroke=p.getAttribute('stroke');
+        // Mapear color a cuadrante
+        const quadMap={'#6dd26d':'LÍDER','#e8a847':'DEBILITÁNDOSE','#ff6b6b':'REZAGADO','#7a9ec8':'MEJORANDO'};
+        if(quadMap[stroke]===quadName){
+          sectorsInQuad.add(p.getAttribute('data-sector'));
+        }
       });
+
+      // Resaltar todos los sectores del cuadrante
+      document.querySelectorAll('#rrg path[data-sector], #rrg circle[data-sector]').forEach(el=>{
+        const sector=el.getAttribute('data-sector');
+        const inQuad=sectorsInQuad.has(sector);
+        el.style.opacity=inQuad?'1':'0.05';
+        el.style.strokeWidth=inQuad?'1.2':'0.7';
+        if(el.tagName==='circle' && el.getAttribute('r')==='3.5'){
+          el.style.r=inQuad?'4':'3.5';
+        }
+      });
+
+      // Mostrar labels del cuadrante
+      document.querySelectorAll('#rrg text[font-size="11"]').forEach(t=>{
+        t.style.display=sectorsInQuad.has(t.textContent.trim())?'inline':'none';
+      });
+
+      selectedSector='__QUAD__'+quadName;
     });
-    rect.addEventListener('mouseleave',()=>{
-      document.querySelectorAll('#rrg text[font-size="10.5"]').forEach(t=>t.style.display='inline');
-    });
-    svg.appendChild(rect);
+  });
+
+  // Click en el fondo del SVG para deseleccionar
+  svg.addEventListener('click',()=>{
+    selectedSector=null;
+    updateDisplay(null);
   });
 }
 
