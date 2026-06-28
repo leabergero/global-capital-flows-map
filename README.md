@@ -1,127 +1,184 @@
 # Mapa de Flujos Globales
 
-Terminal cross-asset que visualiza la **rotación de capital** entre clases de
-activo, sectores e industrias. Backend Flask que ingiere/calcula/cachea datos de
-FMP (+ OpenBB opcional) y un frontend que solo pinta. La API key **nunca** toca
-el navegador.
+**Terminal cross-asset para visualizar rotación de capital** entre clases de activo, sectores e industrias.
 
----
-
-## ⚠️ Antes que nada: tu API key
-
-Si pegaste tu key de FMP en algún chat o canal, **considerala comprometida**:
-entrá al panel de FMP y **regenerala**. Después poné la nueva en `.env` (local,
-en `.gitignore`, nunca al repo).
+Terminal interactiva que muestra:
+- **RRG (Relative Rotation Graph)**: rotación de sectores con análisis de cuadrantes
+- **RORO (Risk-On/Risk-Off)**: régimen de mercado con z-scores de ratios cíclicos/defensivos
+- **CMF (Chaikin Money Flow)**: presión de precios en el árbol jerárquico
+- **COT (Commitment of Traders)**: posicionamiento de especuladores
+- **Macro KPIs**: tasas, FX, commodities, inflación, volatilidad
+- **Noticias**: headlines con sentimiento
+- **Heatmap interactivo**: árbol jerárquico con navegación por niveles
 
 ---
 
 ## Arranque rápido
 
 ```bash
-# 1) configurar la key (o dejá el placeholder para modo DEMO)
+# 1) Configurar keys (todas gratis)
 cp .env.example .env
-#   editá .env y poné FMP_API_KEY=<tu_key_regenerada>
+# Editar .env y agregar (opcional):
+#   FRED_API_KEY=<tu_fred_key>        (Federal Reserve Economic Data)
+#   QUANDL_API_KEY=<tu_quandl_key>    (COT - Commitment of Traders)
 
-# 2) opción A — script todo-en-uno
+# 2) Correr
 bash run.sh
 
-# 2) opción B — manual
+# Manual
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 python app.py
 ```
 
-Abrí **http://127.0.0.1:5000**.
-
-- **Sin key** (placeholder) → arranca en **modo DEMO** con datos sintéticos: sirve
-  para ver la herramienta funcionando al instante.
-- **Con key** → construye en vivo. Si una llamada a FMP falla (endpoint premium,
-  símbolo con otra convención, rate limit), **esa sección cae a demo** y el resto
-  sigue en vivo; el badge muestra `parcial` y el pie lista qué cayó.
+Abrir **http://127.0.0.1:5000**
 
 ---
 
-## Arquitectura (dos capas)
+## Arquitectura
 
+### Backend (Flask - app.py)
 ```
-navegador (static/index.html)
-   │  fetch GET /api/snapshot   (solo JSON ya procesado)
-   ▼
-Flask (app.py)
-   ├─ fmp_client.py     wrapper FMP + caché en disco + logging
-   ├─ compute/
-   │   ├─ rrg.py        RS-Ratio / RS-Momentum (reproducción JdK)
-   │   ├─ cmf.py        Chaikin Money Flow (presión)
-   │   ├─ flows.py      flujo implícito ETF (Δ AUM × NAV)  ← dinero observado
-   │   ├─ roro.py       índice risk-on/off (z-score compuesto)
-   │   ├─ cot.py        posición neta no-comercial
-   │   ├─ macro.py      tasas / FX / commodities / CPI
-   │   └─ news.py       OpenBB → fallback FMP
-   ├─ universe.py       árbol jerárquico + tickers FMP
-   ├─ config.py         símbolos, TTLs, parámetros  ← editá acá
-   └─ cache/            caché TTL en disco
+compute/
+  ├─ rrg.py      RS-Ratio / RS-Momentum (fuerza relativa vs momentum)
+  ├─ cmf.py      Chaikin Money Flow (presión de precios)
+  ├─ roro.py     Risk-On/Off (z-scores de SPY/Bonos USA, Cobre/Oro, etc.)
+  ├─ cot.py      Commitment of Traders (especuladores)
+  ├─ macro.py    KPIs económicos (tasas, FX, commodities, inflación)
+  └─ news.py     Headlines con sentimiento
+  
+fmp_client.py    Wrapper de datos (yfinance, FRED, Quandl, FMP)
+cache.py         Caché TTL en disco
+config.py        Símbolos, parámetros, benchmarks ← editar aquí
+universe.py      Árbol jerárquico (clases → sectores → industrias → activos)
 ```
 
-**La key vive solo en el backend** (variable de entorno). El frontend recibe
-datos, nunca credenciales. FMP además bloquea CORS desde el navegador, así que
-llamarlo desde el frontend ni funcionaría: por eso esta separación es obligatoria.
+### Frontend (vanilla JS + SVG)
+```
+static/index.html (sin build step, sin frameworks)
+  ├─ RRG interactivo (PixiJS + SVG fallback)
+  │   └─ Click en cuadrante = selecciona todos los sectores
+  │   └─ Click en línea/punto = selecciona un sector solo
+  ├─ Heatmap interactivo con glow dinámico
+  │   └─ Verde (positivo) / Rojo (negativo)
+  ├─ Tooltips visuales en macro KPIs
+  └─ Animaciones CSS fade-in y hover effects
+```
 
 ---
 
-## Disciplina conceptual (importante)
+## Fuentes de datos
 
-El mapa separa dos cosas que **no** son lo mismo:
+| Componente | Fuente | Costo | Requiere |
+|-----------|--------|-------|----------|
+| **Históricos de precio** | yfinance | Gratis | Nada |
+| **RRG Sectores/Cross** | yfinance | Gratis | Nada |
+| **CMF (presión)** | yfinance | Gratis | Nada |
+| **RORO (régimen)** | yfinance | Gratis | Nada |
+| **Cotizaciones** | yfinance | Gratis | Nada |
+| **Indicadores económicos** | FRED | Gratis | FRED_API_KEY |
+| **COT (Traders)** | Quandl | Gratis | QUANDL_API_KEY |
+| **Noticias** | OpenBB | Gratis | Instalado |
+| **Flujo ETF** | FMP | Gratis | FMP_API_KEY |
 
-- **Flujos inferidos** (proxy, tiempo real): RRG, CMF, ratios RORO. Se leen como
-  *fuerza* o *presión*. **Nunca** afirman “entró/salió capital”.
-- **Flujos observados** (dinero real, con lag): **flujo implícito ETF** (Δ AUM por
-  creación/redención) y COT. Solo estos pueden decir “el capital se movió”.
-
-Por eso no hay Sankey con flechas par-a-par: el dato no soporta esa magnitud.
-El volumen mide rotación, no flujo neto (un cierre en baja con volumen alto tiene
-comprador del otro lado); por eso usamos CMF, que pondera *dónde* cierra el precio.
-
----
-
-## Cadencia de actualización (TTL de caché, en `config.py`)
-
-| Capa | Fuente | Cadencia |
-|------|--------|----------|
-| RRG · CMF · RORO | precios FMP | horaria |
-| Flujo implícito ETF | FMP `/etf/holdings` | diaria |
-| COT | FMP COT | semanal |
-| Macro | FMP econ + OpenBB/FRED | diaria |
-| Noticias | OpenBB → FMP | intradía |
-
-Para forzar recálculo, borrá `cache/*.json`.
+**Sin keys opcionales**: sistema funciona al 100% (RRG, CMF, RORO, cotizaciones, noticias).
+- Sin FRED → macro indicadores en "n/d"
+- Sin Quandl → COT en demo
 
 ---
 
-## Troubleshooting (iterativo, como tus otros proyectos)
+## Interactividad
 
-Los logs de consola muestran cada request FMP con su status. Lo más común:
+### RRG (Relative Rotation Graph)
+- **Hover sobre cuadrante**: resalta todos los sectores del cuadrante
+- **Hover sobre línea/punto**: resalta un sector individual
+- **Click en nombre de cuadrante**: fija todos los sectores (resto desaparece)
+- **Click en línea/punto**: fija un sector solo
+- **Click en background**: deselecciona
 
-- **Una tarjeta macro sale `n/d`** → la convención de símbolo de FMP para ese
-  commodity/índice difiere. Ajustá `MACRO_CARDS` en `config.py` (probá los `alt`
-  o reemplazá el símbolo). Ej.: WTI puede ser `CLUSD`, `WTIUSD`, o el ETF `USO`.
-- **Panel COT vacío** → el endpoint/los nombres de campo COT varían por plan.
-  Revisá `COT_SYMBOLS` en `config.py` y la lista de campos en `compute/cot.py`.
-- **Flujo ETF en `—` para todo** → tu plan FMP quizá no expone `/etf/holdings`
-  histórico, o el ETF no tiene dos fechas de corte. Es la capa más sensible al
-  plan. El resto del dashboard funciona igual.
-- **Sección entera en demo (badge `parcial`)** → mirá `meta.notes` en el pie y el
-  log; suele ser un endpoint premium o un rate limit (plan gratuito de FMP es
-  acotado; subí el TTL o el plan).
-- **Noticias genéricas / sin OpenBB** → OpenBB es opcional y pesado. Sin él,
-  caen a FMP. Para activarlo: descomentá `openbb` en `requirements.txt` e instalá.
+### Heatmap
+- **Navega**: click en tiles sin flechas (▸) para expandir
+- **Glow dinámico**: verde (alcista) / rojo (bajista)
+- **Hover**: levanta y resalta
+- **Métrica**: botones para cambiar entre RS, CMF
 
-Editá `universe.py` para agregar/quitar tickers: se refleja en todo el mapa.
+### Macro KPIs
+- **Hover**: tooltip con descripción de qué indica
+- **Sparkline**: últimos 12 períodos
+- Soporta: tasas, FX, commodities, inflación, volatilidad (VIX)
 
 ---
 
-## Notas
+## Conceptos clave
 
-- Datos marcados **DEMO** son sintéticos e ilustrativos, no reales.
-- `BENCH_EQUITY` / `BENCH_CROSS` en `config.py` cambian los benchmarks del RRG.
-- Probado en modo DEMO de punta a punta. El modo LIVE depende de tu plan FMP;
-  iteramos sobre lo que devuelva tu cuenta.
+### Flujos inferidos vs observados
+- **Inferidos** (proxy, tiempo real): RRG, CMF, RORO → se leen como *fuerza/presión*
+- **Observados** (dinero real, con lag): flujo ETF, COT → se leen como *capital real*
+
+Nunca etiquetar RRG/CMF como "entró/salió capital". Solo flujo ETF y COT pueden.
+
+### RORO (Risk-On/Risk-Off)
+Compuesto de:
+- **SPY / Bonos USA**: acciones vs bonos (ciclo vs defensa)
+- **Cobre / Oro**: ciclo vs refugio
+- **Cíclicos / Defensivos**: XLY vs XLP
+- **Spread HY (inv)**: high-yield vs treasuries
+- **VIX (invertido)**: volatilidad inversa
+
+**Positivo (+)** = Risk-On (favorables al riesgo)  
+**Negativo (-)** = Risk-Off (defensivos)
+
+---
+
+## Customización
+
+### Agregar/quitar sectores
+Editar `universe.py` → se refleja automáticamente en todo el árbol.
+
+### Cambiar símbolos macro
+Editar `MACRO_CARDS` en `config.py`:
+```python
+MACRO_CARDS = [
+    {"nm": "Fed funds", "kind": "econ", "name": "federalFunds", "fred": "FEDFUNDS", "unit": "%"},
+    {"nm": "Plata/Oro", "kind": "ratio", "a": "SIUSD", "b": "GCUSD", "unit": "ratio"},
+    ...
+]
+```
+
+### Cambiar benchmarks RRG
+`config.py`:
+```python
+BENCH_EQUITY = "SPY"      # Benchmark para sectores
+BENCH_CROSS = "ACWI"      # Benchmark para cross-asset
+```
+
+---
+
+## Troubleshooting
+
+- **Macro KPI sin gráfico**: símbolo FMP incorrecto. Probar `alt` en `config.py`.
+- **COT vacío**: revisión de `COT_SYMBOLS` y nombres de campos en `compute/cot.py`.
+- **Badge "parcial"**: ver `meta.notes` en el pie; algún endpoint premium no disponible.
+- **RRG labels superpuestos**: es normal en zoom alto; click en línea para aislar.
+
+---
+
+## Datos y caché
+
+Para forzar recálculo:
+```bash
+rm -rf cache/*.json
+```
+
+TTLs en `config.py`:
+- Precios (RRG, CMF): **horaria**
+- Macro, ETF flows: **diaria**
+- COT: **semanal**
+
+---
+
+## Autor
+
+© 2026 Leandro R. Bergero, Msc Finance & Banking BSM-UPF
+
+Análisis de rotación de capital global | Datos en vivo, inferencias reales.

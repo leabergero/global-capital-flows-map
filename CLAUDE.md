@@ -10,12 +10,13 @@ Hay decisiones de diseño deliberadas que NO se deben romper sin avisar.
 Terminal cross-asset que visualiza **rotación de capital** entre clases de activo,
 sectores e industrias. Dos capas:
 
-- **Backend Flask** (`app.py`): ingiere datos de FMP (+ OpenBB opcional), calcula
-  los modelos, cachea y expone un único JSON en `/api/snapshot`.
+- **Backend Flask** (`app.py`): ingiere datos de yfinance + FRED + Quandl + OpenBB,
+  calcula los modelos, cachea y expone un único JSON en `/api/snapshot`.
 - **Frontend** (`static/index.html`): vanilla JS + SVG inline, solo pinta el JSON.
   Sin frameworks, sin build step, un solo archivo.
 
-La API key vive **solo** en el backend (variable de entorno). Nunca en el frontend.
+Las API keys (todas opcionales, todas gratis) viven **solo** en el backend
+(variables de entorno). Nunca en el frontend.
 
 ---
 
@@ -33,15 +34,17 @@ python app.py                       # http://127.0.0.1:5000
 # verificar que compila todo
 python -m py_compile *.py compute/*.py
 
-# probar el camino LIVE sin key válida (todo cae a demo, no debe romper)
-FMP_API_KEY=dummy python -c "import app; print(app._live_snapshot()['meta']['mode'])"
+# probar el camino LIVE sin keys (yfinance es gratis, todo funciona)
+python -c "import app; print(app._live_snapshot()['meta']['mode'])"
 
 # forzar recálculo (borrar caché)
-rm -f cache/*.json
+rm -rf cache/*.json
 ```
 
-Sin `.env` o con el placeholder `tu_key_regenerada` → arranca en **modo DEMO**
-(datos sintéticos de `demo_data.py`). Con key real → modo LIVE.
+**Modo**: Siempre **LIVE** con yfinance (gratis, sin API key).
+- Con `FRED_API_KEY` → indicadores económicos en vivo
+- Con `QUANDL_API_KEY` → COT en vivo
+- Sin ellas → esos paneles usan demo/fallback
 
 ---
 
@@ -87,7 +90,7 @@ Backend y frontend dependen de esta forma EXACTA. Si cambiás una, cambiá la ot
     "sectores": [ { "name": "Energía", "rs": 104.6, "mom": 101.9, "path": [[x,y],...] } ],
     "cross":    [ ... ]
   },
-  "roro":  [ ["SPY / TLT", 0.9], ... ],          // [nombre, z-score]
+  "roro":  [ ["SPY / Bonos USA", 0.9], ... ],   // [nombre, z-score]
   "cot":   [ ["S&P fut · ES", 126, 18], ... ],   // [label, neto_miles, cambio_miles]
   "tree":  { "name","rs","mom","cmf","flow","w","children": [ ...recursivo... ] },
   "macro": [ { "nm","val","chg","dir":"up|down|flat","s":[sparkline...] } ],
@@ -98,6 +101,34 @@ Backend y frontend dependen de esta forma EXACTA. Si cambiás una, cambiá la ot
 **Unidades del árbol:** `rs`/`mom` ~100 (centro), `cmf` ∈ [-0.5,0.5] aprox,
 `flow` en **millones de USD** o `null` (solo nodos ETF tienen flujo; acciones,
 cripto y FX van en `null` → tile neutro). El default neutro es rs=mom=100, cmf=0.
+
+---
+
+## Frontend — interactividad y visual (2026-06-28)
+
+**RRG (Relative Rotation Graph)**:
+- **Hover sobre cuadrante**: resalta todos los sectores del cuadrante
+- **Hover sobre línea/punto**: resalta un sector individual
+- **Click en nombre de cuadrante**: fija todos los sectores (resto desaparece)
+- **Click en línea/punto**: fija un sector solo
+- **Líneas**: 0.7px con glow dinámico (color por cuadrante)
+
+**Heatmap**:
+- **Glow dinámico**: verde si positivo (alcista), rojo si negativo (bajista)
+- **Hover**: levanta, escala, brillo aumenta
+- **Navegación**: click en tiles sin flecha (▸) para expandir niveles
+- **Se aplica**: todos los niveles, todos los tiles
+
+**Macro KPIs**:
+- **17 indicadores**: Fed funds, BCE, BoJ, IPC, WTI, Brent, Oro, Plata, Plata/Oro,
+  UST 10Y, DXY, VIX, BTC, EUR/USD, USD/JPY
+- **Hover tooltip**: descripción completa de qué indica
+- **Sparkline**: últimos ~12 períodos (fallback "n/d" si no hay datos)
+
+**Animaciones**:
+- `fadeIn` al cargar panels
+- Glow effects en COT/RORO/Macro valores
+- News dots crecen y brillan al hover
 
 ---
 
@@ -143,45 +174,50 @@ Reglas duras:
 
 ---
 
-## Capa de datos (FMP) — dónde está la fragilidad
+## Fuentes de datos (2026-06-28)
 
-Endpoints en uso (todos en `fmp_client.py`, fáciles de reasignar):
+| Componente | Fuente | Costo | Requiere |
+|-----------|--------|-------|----------|
+| Históricos de precio | yfinance | Gratis | Nada |
+| RRG, CMF, RORO | yfinance | Gratis | Nada |
+| Cotizaciones spot | yfinance | Gratis | Nada |
+| Indicadores económicos | FRED | Gratis | FRED_API_KEY (opcional) |
+| COT (Traders) | Quandl | Gratis | QUANDL_API_KEY (opcional) |
+| Noticias | OpenBB | Gratis | Instalado en venv |
+| Flujo ETF | FMP | Gratis | FMP_API_KEY (opcional) |
 
-| Método | Endpoint | Robustez |
-|--------|----------|----------|
-| `historical()` | `v3/historical-price-full/{sym}` | alta (workhorse: RRG, CMF, RORO, macro) |
-| `quote()` | `v3/quote/{sym}` | alta |
-| `etf_holdings()` / `etf_holding_dates()` | `stable/etf/holdings` | media (puede ser premium) |
-| `cot()` | `v4/commitment_of_traders_report/{sym}` | baja (varía por plan) |
-| `economic()` | `v4/economic?name=` | baja (varía por plan) |
+**Sin keys opcionales**: sistema funciona 100% (RRG, CMF, RORO, cotizaciones, noticias).
+- Sin FRED → macro indicadores en "n/d"
+- Sin Quandl → COT en demo
 
-**Si algo sale mal, casi siempre se arregla en `config.py`, no en la lógica:**
-- Tarjeta macro en `n/d` → la convención del símbolo difiere. Ajustá `MACRO_CARDS`
-  (probá los `alt`, ej. WTI: `CLUSD`/`WTIUSD`/`USO`). Símbolos de índices como
-  `^TNX`, `^DXY` dependen del plan.
-- Panel COT vacío → revisá `COT_SYMBOLS` y la lista de nombres de campo en
-  `compute/cot.py` (`_LONG`, `_SHORT`, etc.; cambian entre versiones del endpoint).
-- Flujo ETF todo en `—` → el plan quizá no expone `/etf/holdings` histórico, o
-  el ETF no tiene dos fechas de corte. Es la capa más sensible al plan.
+**Si algo sale mal, casi siempre se arregla en `config.py`**:
+- Macro KPI en `n/d` → símbolo yfinance incorrecto. Revisá `MACRO_CARDS`
+  (probá los `alt`, ej. WTI: `CLUSD`/`WTIUSD`/`USO`).
+- COT vacío → revisá `COT_SYMBOLS` y campos en `compute/cot.py`.
+- Flujo ETF vacío → FMP key falta o plan no expone `/etf/holdings` histórico.
 
-La estrategia es iterativa: correr con la key real, ver qué secciones salen
-`parcial` (badge + `meta.notes`) y ajustar símbolos/endpoints. El core (RRG/CMF/
-RORO/macro vía precio) corre con los endpoints de alta robustez.
+La estrategia es iterativa: correr, ver qué secciones salen `parcial` (badge +
+`meta.notes`) y ajustar símbolos/endpoints en `config.py`. El core (RRG/CMF/RORO/
+cotizaciones) funciona sin keys (yfinance es gratis).
 
 ---
 
-## Pendientes / decisiones abiertas
+## Estado actual (2026-06-28)
 
-- [ ] **Benchmark RRG cross-asset**: `BENCH_CROSS = "ACWI"` por default en
-      `config.py`. Evaluar `URTH` o `VT`. (Sectores usa `SPY`, eso queda.)
-- [ ] **COT**: confirmar nombres de campo reales contra la cuenta FMP y fijarlos.
-- [ ] **Símbolos commodities/índices**: validar `CLUSD/BZUSD/^TNX/GCUSD/^DXY`
-      contra el plan; ajustar `MACRO_CARDS`.
-- [ ] **OpenBB**: opcional y pesado, comentado en `requirements.txt`. Sin él,
-      noticias caen a FMP e indicadores a FMP economic. Activar solo si hace falta.
-- [ ] **RORO**: `maxAbs` del frontend es 1.5; los z reales pueden superarlo (se
-      clampean a ±3 en backend). Si se ven barras saturadas, subir el `maxAbs`
-      del `renderBars('roroBars', ...)` en `static/index.html`.
+✅ **Completado**:
+- RRG interactivo (click en cuadrante/sector)
+- Heatmap con glow dinámico (rojo/verde)
+- RORO verificado conceptualmente correcto
+- 17 KPIs macro con tooltips visuales
+- Frontend vanilla JS + SVG (sin build)
+- Datos: yfinance + FRED + Quandl + OpenBB
+- Copyright: Leandro R. Bergero, Msc Finance & Banking BSM-UPF
+- Animaciones CSS y glow effects en todos los paneles
+
+⚠️ **Pendientes menores**:
+- [ ] Benchmark RRG cross-asset: validar `BENCH_CROSS = "ACWI"` vs alternativas
+- [ ] Mobile responsive (hoy es desktop-only)
+- [ ] Persistencia histórica de snapshots (para evolución de rotación)
 
 ## Ideas de v2 (no empezar sin pedir)
 
