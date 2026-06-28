@@ -1,0 +1,2524 @@
+{
+  "directed": false,
+  "multigraph": false,
+  "graph": {},
+  "nodes": [
+    {
+      "label": "config.py",
+      "file_type": "code",
+      "source_file": "config.py",
+      "source_location": "L1",
+      "id": "config_py",
+      "community": 11,
+      "norm_label": "config.py"
+    },
+    {
+      "label": "Configuraci\u00f3n central del backend.  Todos los s\u00edmbolos de FMP, los TTL de cach\u00e9",
+      "file_type": "rationale",
+      "source_file": "config.py",
+      "source_location": "L1",
+      "id": "flujos_globales_config_rationale_1",
+      "community": 11,
+      "norm_label": "configuracion central del backend.  todos los simbolos de fmp, los ttl de cache"
+    },
+    {
+      "label": "demo_data.py",
+      "file_type": "code",
+      "source_file": "demo_data.py",
+      "source_location": "L1",
+      "id": "demo_data_py",
+      "community": 1,
+      "norm_label": "demo_data.py"
+    },
+    {
+      "label": "_seed()",
+      "file_type": "code",
+      "source_file": "demo_data.py",
+      "source_location": "L13",
+      "id": "flujos_globales_demo_data_seed",
+      "community": 1,
+      "norm_label": "_seed()"
+    },
+    {
+      "label": "_metrics()",
+      "file_type": "code",
+      "source_file": "demo_data.py",
+      "source_location": "L20",
+      "id": "flujos_globales_demo_data_metrics",
+      "community": 1,
+      "norm_label": "_metrics()"
+    },
+    {
+      "label": "_tree()",
+      "file_type": "code",
+      "source_file": "demo_data.py",
+      "source_location": "L29",
+      "id": "flujos_globales_demo_data_tree",
+      "community": 1,
+      "norm_label": "_tree()"
+    },
+    {
+      "label": "_rrg()",
+      "file_type": "code",
+      "source_file": "demo_data.py",
+      "source_location": "L45",
+      "id": "flujos_globales_demo_data_rrg",
+      "community": 1,
+      "norm_label": "_rrg()"
+    },
+    {
+      "label": "_roro()",
+      "file_type": "code",
+      "source_file": "demo_data.py",
+      "source_location": "L58",
+      "id": "flujos_globales_demo_data_roro",
+      "community": 1,
+      "norm_label": "_roro()"
+    },
+    {
+      "label": "_regime()",
+      "file_type": "code",
+      "source_file": "demo_data.py",
+      "source_location": "L65",
+      "id": "flujos_globales_demo_data_regime",
+      "community": 1,
+      "norm_label": "_regime()"
+    },
+    {
+      "label": "_cot()",
+      "file_type": "code",
+      "source_file": "demo_data.py",
+      "source_location": "L73",
+      "id": "flujos_globales_demo_data_cot",
+      "community": 1,
+      "norm_label": "_cot()"
+    },
+    {
+      "label": "_macro()",
+      "file_type": "code",
+      "source_file": "demo_data.py",
+      "source_location": "L79",
+      "id": "flujos_globales_demo_data_macro",
+      "community": 1,
+      "norm_label": "_macro()"
+    },
+    {
+      "label": "_news()",
+      "file_type": "code",
+      "source_file": "demo_data.py",
+      "source_location": "L102",
+      "id": "flujos_globales_demo_data_news",
+      "community": 1,
+      "norm_label": "_news()"
+    },
+    {
+      "label": "snapshot()",
+      "file_type": "code",
+      "source_file": "demo_data.py",
+      "source_location": "L113",
+      "id": "flujos_globales_demo_data_snapshot",
+      "community": 1,
+      "norm_label": "snapshot()"
+    },
+    {
+      "label": "Generador de snapshot sint\u00e9tico. Se usa cuando no hay key (modo DEMO) y como fal",
+      "file_type": "rationale",
+      "source_file": "demo_data.py",
+      "source_location": "L1",
+      "id": "flujos_globales_demo_data_rationale_1",
+      "community": 1,
+      "norm_label": "generador de snapshot sintetico. se usa cuando no hay key (modo demo) y como fal"
+    },
+    {
+      "label": "rs ~ [94,108], mom ~ [96,105], cmf ~ [-0.5,0.5] deterministas.",
+      "file_type": "rationale",
+      "source_file": "demo_data.py",
+      "source_location": "L21",
+      "id": "flujos_globales_demo_data_rationale_21",
+      "community": 1,
+      "norm_label": "rs ~ [94,108], mom ~ [96,105], cmf ~ [-0.5,0.5] deterministas."
+    },
+    {
+      "label": "cache.py",
+      "file_type": "code",
+      "source_file": "cache.py",
+      "source_location": "L1",
+      "id": "cache_py",
+      "community": 2,
+      "norm_label": "cache.py"
+    },
+    {
+      "label": "_path()",
+      "file_type": "code",
+      "source_file": "cache.py",
+      "source_location": "L14",
+      "id": "flujos_globales_cache_path",
+      "community": 2,
+      "norm_label": "_path()"
+    },
+    {
+      "label": "get()",
+      "file_type": "code",
+      "source_file": "cache.py",
+      "source_location": "L19",
+      "id": "flujos_globales_cache_get",
+      "community": 2,
+      "norm_label": "get()"
+    },
+    {
+      "label": "set()",
+      "file_type": "code",
+      "source_file": "cache.py",
+      "source_location": "L34",
+      "id": "flujos_globales_cache_set",
+      "community": 2,
+      "norm_label": "set()"
+    },
+    {
+      "label": "clear()",
+      "file_type": "code",
+      "source_file": "cache.py",
+      "source_location": "L45",
+      "id": "flujos_globales_cache_clear",
+      "community": 2,
+      "norm_label": "clear()"
+    },
+    {
+      "label": "Cach\u00e9 TTL en disco (JSON). Respeta los l\u00edmites de FMP y persiste entre reinicios",
+      "file_type": "rationale",
+      "source_file": "cache.py",
+      "source_location": "L1",
+      "id": "flujos_globales_cache_rationale_1",
+      "community": 2,
+      "norm_label": "cache ttl en disco (json). respeta los limites de fmp y persiste entre reinicios"
+    },
+    {
+      "label": "Devuelve el valor cacheado si sigue fresco, si no None.",
+      "file_type": "rationale",
+      "source_file": "cache.py",
+      "source_location": "L20",
+      "id": "flujos_globales_cache_rationale_20",
+      "community": 2,
+      "norm_label": "devuelve el valor cacheado si sigue fresco, si no none."
+    },
+    {
+      "label": "Guarda value bajo key con vencimiento ttl segundos.",
+      "file_type": "rationale",
+      "source_file": "cache.py",
+      "source_location": "L35",
+      "id": "flujos_globales_cache_rationale_35",
+      "community": 2,
+      "norm_label": "guarda value bajo key con vencimiento ttl segundos."
+    },
+    {
+      "label": "app.py",
+      "file_type": "code",
+      "source_file": "app.py",
+      "source_location": "L1",
+      "id": "app_py",
+      "community": 3,
+      "norm_label": "app.py"
+    },
+    {
+      "label": "_prefetch()",
+      "file_type": "code",
+      "source_file": "app.py",
+      "source_location": "L35",
+      "id": "flujos_globales_app_prefetch",
+      "community": 3,
+      "norm_label": "_prefetch()"
+    },
+    {
+      "label": "_lookup()",
+      "file_type": "code",
+      "source_file": "app.py",
+      "source_location": "L40",
+      "id": "flujos_globales_app_lookup",
+      "community": 3,
+      "norm_label": "_lookup()"
+    },
+    {
+      "label": "_agg()",
+      "file_type": "code",
+      "source_file": "app.py",
+      "source_location": "L47",
+      "id": "flujos_globales_app_agg",
+      "community": 3,
+      "norm_label": "_agg()"
+    },
+    {
+      "label": "_build_node()",
+      "file_type": "code",
+      "source_file": "app.py",
+      "source_location": "L60",
+      "id": "flujos_globales_app_build_node",
+      "community": 3,
+      "norm_label": "_build_node()"
+    },
+    {
+      "label": "_live_snapshot()",
+      "file_type": "code",
+      "source_file": "app.py",
+      "source_location": "L105",
+      "id": "flujos_globales_app_live_snapshot",
+      "community": 3,
+      "norm_label": "_live_snapshot()"
+    },
+    {
+      "label": "_openbb_available()",
+      "file_type": "code",
+      "source_file": "app.py",
+      "source_location": "L159",
+      "id": "flujos_globales_app_openbb_available",
+      "community": 3,
+      "norm_label": "_openbb_available()"
+    },
+    {
+      "label": "index()",
+      "file_type": "code",
+      "source_file": "app.py",
+      "source_location": "L171",
+      "id": "flujos_globales_app_index",
+      "community": 3,
+      "norm_label": "index()"
+    },
+    {
+      "label": "snapshot()",
+      "file_type": "code",
+      "source_file": "app.py",
+      "source_location": "L176",
+      "id": "flujos_globales_app_snapshot",
+      "community": 3,
+      "norm_label": "snapshot()"
+    },
+    {
+      "label": "health()",
+      "file_type": "code",
+      "source_file": "app.py",
+      "source_location": "L191",
+      "id": "flujos_globales_app_health",
+      "community": 3,
+      "norm_label": "health()"
+    },
+    {
+      "label": "Backend Flask del Mapa de Flujos Globales.  Rutas:   GET /                -> sir",
+      "file_type": "rationale",
+      "source_file": "app.py",
+      "source_location": "L1",
+      "id": "flujos_globales_app_rationale_1",
+      "community": 3,
+      "norm_label": "backend flask del mapa de flujos globales.  rutas:   get /                -> sir"
+    },
+    {
+      "label": "Promedio ponderado por w de una m\u00e9trica entre hijos (ignora None).",
+      "file_type": "rationale",
+      "source_file": "app.py",
+      "source_location": "L48",
+      "id": "flujos_globales_app_rationale_48",
+      "community": 3,
+      "norm_label": "promedio ponderado por w de una metrica entre hijos (ignora none)."
+    },
+    {
+      "label": "universe.py",
+      "file_type": "code",
+      "source_file": "universe.py",
+      "source_location": "L1",
+      "id": "universe_py",
+      "community": 2,
+      "norm_label": "universe.py"
+    },
+    {
+      "label": "node()",
+      "file_type": "code",
+      "source_file": "universe.py",
+      "source_location": "L17",
+      "id": "flujos_globales_universe_node",
+      "community": 2,
+      "norm_label": "node()"
+    },
+    {
+      "label": "all_symbols()",
+      "file_type": "code",
+      "source_file": "universe.py",
+      "source_location": "L145",
+      "id": "flujos_globales_universe_all_symbols",
+      "community": 2,
+      "norm_label": "all_symbols()"
+    },
+    {
+      "label": "Universo jer\u00e1rquico: clases -> sectores -> industrias -> constituyentes.  Cada n",
+      "file_type": "rationale",
+      "source_file": "universe.py",
+      "source_location": "L1",
+      "id": "flujos_globales_universe_rationale_1",
+      "community": 2,
+      "norm_label": "universo jerarquico: clases -> sectores -> industrias -> constituyentes.  cada n"
+    },
+    {
+      "label": "Todos los s\u00edmbolos \u00fanicos del \u00e1rbol (para prefetch de hist\u00f3ricos).",
+      "file_type": "rationale",
+      "source_file": "universe.py",
+      "source_location": "L146",
+      "id": "flujos_globales_universe_rationale_146",
+      "community": 2,
+      "norm_label": "todos los simbolos unicos del arbol (para prefetch de historicos)."
+    },
+    {
+      "label": "fmp_client.py",
+      "file_type": "code",
+      "source_file": "fmp_client.py",
+      "source_location": "L1",
+      "id": "fmp_client_py",
+      "community": 0,
+      "norm_label": "fmp_client.py"
+    },
+    {
+      "label": "_get()",
+      "file_type": "code",
+      "source_file": "fmp_client.py",
+      "source_location": "L16",
+      "id": "flujos_globales_fmp_client_get",
+      "community": 0,
+      "norm_label": "_get()"
+    },
+    {
+      "label": "historical()",
+      "file_type": "code",
+      "source_file": "fmp_client.py",
+      "source_location": "L44",
+      "id": "flujos_globales_fmp_client_historical",
+      "community": 0,
+      "norm_label": "historical()"
+    },
+    {
+      "label": "quote()",
+      "file_type": "code",
+      "source_file": "fmp_client.py",
+      "source_location": "L75",
+      "id": "flujos_globales_fmp_client_quote",
+      "community": 0,
+      "norm_label": "quote()"
+    },
+    {
+      "label": "etf_holding_dates()",
+      "file_type": "code",
+      "source_file": "fmp_client.py",
+      "source_location": "L87",
+      "id": "flujos_globales_fmp_client_etf_holding_dates",
+      "community": 0,
+      "norm_label": "etf_holding_dates()"
+    },
+    {
+      "label": "etf_holdings()",
+      "file_type": "code",
+      "source_file": "fmp_client.py",
+      "source_location": "L100",
+      "id": "flujos_globales_fmp_client_etf_holdings",
+      "community": 0,
+      "norm_label": "etf_holdings()"
+    },
+    {
+      "label": "cot()",
+      "file_type": "code",
+      "source_file": "fmp_client.py",
+      "source_location": "L111",
+      "id": "flujos_globales_fmp_client_cot",
+      "community": 0,
+      "norm_label": "cot()"
+    },
+    {
+      "label": "economic()",
+      "file_type": "code",
+      "source_file": "fmp_client.py",
+      "source_location": "L120",
+      "id": "flujos_globales_fmp_client_economic",
+      "community": 0,
+      "norm_label": "economic()"
+    },
+    {
+      "label": "Cliente FMP. Centraliza TODAS las rutas en un solo lugar (ENDPOINTS) para que aj",
+      "file_type": "rationale",
+      "source_file": "fmp_client.py",
+      "source_location": "L1",
+      "id": "flujos_globales_fmp_client_rationale_1",
+      "community": 0,
+      "norm_label": "cliente fmp. centraliza todas las rutas en un solo lugar (endpoints) para que aj"
+    },
+    {
+      "label": "GET con cach\u00e9 + logging. Devuelve JSON parseado o None.",
+      "file_type": "rationale",
+      "source_file": "fmp_client.py",
+      "source_location": "L17",
+      "id": "flujos_globales_fmp_client_rationale_17",
+      "community": 0,
+      "norm_label": "get con cache + logging. devuelve json parseado o none."
+    },
+    {
+      "label": "Devuelve lista ascendente de barras OHLCV:     [{date, open, high, low, close, v",
+      "file_type": "rationale",
+      "source_file": "fmp_client.py",
+      "source_location": "L45",
+      "id": "flujos_globales_fmp_client_rationale_45",
+      "community": 0,
+      "norm_label": "devuelve lista ascendente de barras ohlcv:     [{date, open, high, low, close, v"
+    },
+    {
+      "label": "Cotizaci\u00f3n actual: {price, changesPercentage, ...} o None.",
+      "file_type": "rationale",
+      "source_file": "fmp_client.py",
+      "source_location": "L76",
+      "id": "flujos_globales_fmp_client_rationale_76",
+      "community": 0,
+      "norm_label": "cotizacion actual: {price, changespercentage, ...} o none."
+    },
+    {
+      "label": "Fechas en que se actualizaron los holdings del ETF (desc).",
+      "file_type": "rationale",
+      "source_file": "fmp_client.py",
+      "source_location": "L88",
+      "id": "flujos_globales_fmp_client_rationale_88",
+      "community": 0,
+      "norm_label": "fechas en que se actualizaron los holdings del etf (desc)."
+    },
+    {
+      "label": "Holdings del ETF en una fecha: lista con marketValue/sharesNumber.",
+      "file_type": "rationale",
+      "source_file": "fmp_client.py",
+      "source_location": "L101",
+      "id": "flujos_globales_fmp_client_rationale_101",
+      "community": 0,
+      "norm_label": "holdings del etf en una fecha: lista con marketvalue/sharesnumber."
+    },
+    {
+      "label": "\u00daltimo reporte COT para un s\u00edmbolo de futuro, o None.",
+      "file_type": "rationale",
+      "source_file": "fmp_client.py",
+      "source_location": "L112",
+      "id": "flujos_globales_fmp_client_rationale_112",
+      "community": 0,
+      "norm_label": "ultimo reporte cot para un simbolo de futuro, o none."
+    },
+    {
+      "label": "Serie de un indicador econ\u00f3mico de FMP, o [].",
+      "file_type": "rationale",
+      "source_file": "fmp_client.py",
+      "source_location": "L121",
+      "id": "flujos_globales_fmp_client_rationale_121",
+      "community": 0,
+      "norm_label": "serie de un indicador economico de fmp, o []."
+    },
+    {
+      "label": "flows.py",
+      "file_type": "code",
+      "source_file": "compute/flows.py",
+      "source_location": "L1",
+      "id": "compute_flows_py",
+      "community": 6,
+      "norm_label": "flows.py"
+    },
+    {
+      "label": "_aum()",
+      "file_type": "code",
+      "source_file": "compute/flows.py",
+      "source_location": "L19",
+      "id": "compute_flows_aum",
+      "community": 6,
+      "norm_label": "_aum()"
+    },
+    {
+      "label": "_close_on_or_before()",
+      "file_type": "code",
+      "source_file": "compute/flows.py",
+      "source_location": "L37",
+      "id": "compute_flows_close_on_or_before",
+      "community": 6,
+      "norm_label": "_close_on_or_before()"
+    },
+    {
+      "label": "implied_flow()",
+      "file_type": "code",
+      "source_file": "compute/flows.py",
+      "source_location": "L48",
+      "id": "compute_flows_implied_flow",
+      "community": 6,
+      "norm_label": "implied_flow()"
+    },
+    {
+      "label": "Flujo impl\u00edcito de ETF \u2014 la \u00daNICA capa donde el dinero es observable, no inferid",
+      "file_type": "rationale",
+      "source_file": "compute/flows.py",
+      "source_location": "L1",
+      "id": "compute_flows_rationale_1",
+      "community": 6,
+      "norm_label": "flujo implicito de etf \u2014 la unica capa donde el dinero es observable, no inferid"
+    },
+    {
+      "label": "\u00daltimo close con fecha <= date (bars ascendente).",
+      "file_type": "rationale",
+      "source_file": "compute/flows.py",
+      "source_location": "L38",
+      "id": "compute_flows_rationale_38",
+      "community": 6,
+      "norm_label": "ultimo close con fecha <= date (bars ascendente)."
+    },
+    {
+      "label": "Devuelve flujo neto estimado en USD (float) o None.     Usa las dos fechas de ho",
+      "file_type": "rationale",
+      "source_file": "compute/flows.py",
+      "source_location": "L49",
+      "id": "compute_flows_rationale_49",
+      "community": 6,
+      "norm_label": "devuelve flujo neto estimado en usd (float) o none.     usa las dos fechas de ho"
+    },
+    {
+      "label": "news.py",
+      "file_type": "code",
+      "source_file": "compute/news.py",
+      "source_location": "L1",
+      "id": "compute_news_py",
+      "community": 7,
+      "norm_label": "news.py"
+    },
+    {
+      "label": "_sentiment()",
+      "file_type": "code",
+      "source_file": "compute/news.py",
+      "source_location": "L21",
+      "id": "compute_news_sentiment",
+      "community": 7,
+      "norm_label": "_sentiment()"
+    },
+    {
+      "label": "_hhmm()",
+      "file_type": "code",
+      "source_file": "compute/news.py",
+      "source_location": "L30",
+      "id": "compute_news_hhmm",
+      "community": 7,
+      "norm_label": "_hhmm()"
+    },
+    {
+      "label": "_from_openbb()",
+      "file_type": "code",
+      "source_file": "compute/news.py",
+      "source_location": "L37",
+      "id": "compute_news_from_openbb",
+      "community": 7,
+      "norm_label": "_from_openbb()"
+    },
+    {
+      "label": "_from_fmp()",
+      "file_type": "code",
+      "source_file": "compute/news.py",
+      "source_location": "L58",
+      "id": "compute_news_from_fmp",
+      "community": 7,
+      "norm_label": "_from_fmp()"
+    },
+    {
+      "label": "headlines()",
+      "file_type": "code",
+      "source_file": "compute/news.py",
+      "source_location": "L80",
+      "id": "compute_news_headlines",
+      "community": 7,
+      "norm_label": "headlines()"
+    },
+    {
+      "label": "Noticias. Primario: OpenBB (obb.news.world). Si OpenBB no est\u00e1 instalado o falla",
+      "file_type": "rationale",
+      "source_file": "compute/news.py",
+      "source_location": "L1",
+      "id": "compute_news_rationale_1",
+      "community": 7,
+      "norm_label": "noticias. primario: openbb (obb.news.world). si openbb no esta instalado o falla"
+    },
+    {
+      "label": "__init__.py",
+      "file_type": "code",
+      "source_file": "compute/__init__.py",
+      "source_location": "L1",
+      "id": "compute_init_py",
+      "community": 12,
+      "norm_label": "__init__.py"
+    },
+    {
+      "label": "rrg.py",
+      "file_type": "code",
+      "source_file": "compute/rrg.py",
+      "source_location": "L1",
+      "id": "compute_rrg_py",
+      "community": 5,
+      "norm_label": "rrg.py"
+    },
+    {
+      "label": "_series()",
+      "file_type": "code",
+      "source_file": "compute/rrg.py",
+      "source_location": "L23",
+      "id": "compute_rrg_series",
+      "community": 5,
+      "norm_label": "_series()"
+    },
+    {
+      "label": "_ratio_momentum()",
+      "file_type": "code",
+      "source_file": "compute/rrg.py",
+      "source_location": "L31",
+      "id": "compute_rrg_ratio_momentum",
+      "community": 5,
+      "norm_label": "_ratio_momentum()"
+    },
+    {
+      "label": "point()",
+      "file_type": "code",
+      "source_file": "compute/rrg.py",
+      "source_location": "L42",
+      "id": "compute_rrg_point",
+      "community": 5,
+      "norm_label": "point()"
+    },
+    {
+      "label": "dataset()",
+      "file_type": "code",
+      "source_file": "compute/rrg.py",
+      "source_location": "L70",
+      "id": "compute_rrg_dataset",
+      "community": 5,
+      "norm_label": "dataset()"
+    },
+    {
+      "label": "RRG \u2014 Relative Rotation Graph.  Reproducci\u00f3n abierta y documentada del m\u00e9todo de",
+      "file_type": "rationale",
+      "source_file": "compute/rrg.py",
+      "source_location": "L1",
+      "id": "compute_rrg_rationale_1",
+      "community": 5,
+      "norm_label": "rrg \u2014 relative rotation graph.  reproduccion abierta y documentada del metodo de"
+    },
+    {
+      "label": "De [{date, close}, ...] ascendente a pd.Series(close) indexada por fecha.",
+      "file_type": "rationale",
+      "source_file": "compute/rrg.py",
+      "source_location": "L24",
+      "id": "compute_rrg_rationale_24",
+      "community": 5,
+      "norm_label": "de [{date, close}, ...] ascendente a pd.series(close) indexada por fecha."
+    },
+    {
+      "label": "Devuelve {'rs', 'mom', 'path'} para un activo vs benchmark, o None si no     hay",
+      "file_type": "rationale",
+      "source_file": "compute/rrg.py",
+      "source_location": "L43",
+      "id": "compute_rrg_rationale_43",
+      "community": 5,
+      "norm_label": "devuelve {'rs', 'mom', 'path'} para un activo vs benchmark, o none si no     hay"
+    },
+    {
+      "label": "pairs: lista (nombre, s\u00edmbolo). price_lookup(s\u00edmbolo)->bars.     Devuelve lista",
+      "file_type": "rationale",
+      "source_file": "compute/rrg.py",
+      "source_location": "L71",
+      "id": "compute_rrg_rationale_71",
+      "community": 5,
+      "norm_label": "pairs: lista (nombre, simbolo). price_lookup(simbolo)->bars.     devuelve lista"
+    },
+    {
+      "label": "cot.py",
+      "file_type": "code",
+      "source_file": "compute/cot.py",
+      "source_location": "L1",
+      "id": "compute_cot_py",
+      "community": 8,
+      "norm_label": "cot.py"
+    },
+    {
+      "label": "_pick()",
+      "file_type": "code",
+      "source_file": "compute/cot.py",
+      "source_location": "L17",
+      "id": "compute_cot_pick",
+      "community": 8,
+      "norm_label": "_pick()"
+    },
+    {
+      "label": "net_position()",
+      "file_type": "code",
+      "source_file": "compute/cot.py",
+      "source_location": "L27",
+      "id": "compute_cot_net_position",
+      "community": 8,
+      "norm_label": "net_position()"
+    },
+    {
+      "label": "table()",
+      "file_type": "code",
+      "source_file": "compute/cot.py",
+      "source_location": "L45",
+      "id": "compute_cot_table",
+      "community": 8,
+      "norm_label": "table()"
+    },
+    {
+      "label": "COT \u2014 Commitment of Traders. Posici\u00f3n neta de no-comerciales (especuladores) y s",
+      "file_type": "rationale",
+      "source_file": "compute/cot.py",
+      "source_location": "L1",
+      "id": "compute_cot_rationale_1",
+      "community": 8,
+      "norm_label": "cot \u2014 commitment of traders. posicion neta de no-comerciales (especuladores) y s"
+    },
+    {
+      "label": "Devuelve (neto_k, cambio_k) en miles de contratos, o None.",
+      "file_type": "rationale",
+      "source_file": "compute/cot.py",
+      "source_location": "L28",
+      "id": "compute_cot_rationale_28",
+      "community": 8,
+      "norm_label": "devuelve (neto_k, cambio_k) en miles de contratos, o none."
+    },
+    {
+      "label": "Lista [[label, neto, cambio], ...] para los s\u00edmbolos que devuelven dato.",
+      "file_type": "rationale",
+      "source_file": "compute/cot.py",
+      "source_location": "L46",
+      "id": "compute_cot_rationale_46",
+      "community": 8,
+      "norm_label": "lista [[label, neto, cambio], ...] para los simbolos que devuelven dato."
+    },
+    {
+      "label": "cmf.py",
+      "file_type": "code",
+      "source_file": "compute/cmf.py",
+      "source_location": "L1",
+      "id": "compute_cmf_py",
+      "community": 10,
+      "norm_label": "cmf.py"
+    },
+    {
+      "label": "cmf()",
+      "file_type": "code",
+      "source_file": "compute/cmf.py",
+      "source_location": "L19",
+      "id": "compute_cmf_cmf",
+      "community": 10,
+      "norm_label": "cmf()"
+    },
+    {
+      "label": "CMF \u2014 Chaikin Money Flow. Mide PRESI\u00d3N (acumulaci\u00f3n/distribuci\u00f3n), no flujo.",
+      "file_type": "rationale",
+      "source_file": "compute/cmf.py",
+      "source_location": "L1",
+      "id": "compute_cmf_rationale_1",
+      "community": 10,
+      "norm_label": "cmf \u2014 chaikin money flow. mide presion (acumulacion/distribucion), no flujo."
+    },
+    {
+      "label": "CMF m\u00e1s reciente a partir de barras OHLCV ascendentes, o None.",
+      "file_type": "rationale",
+      "source_file": "compute/cmf.py",
+      "source_location": "L20",
+      "id": "compute_cmf_rationale_20",
+      "community": 10,
+      "norm_label": "cmf mas reciente a partir de barras ohlcv ascendentes, o none."
+    },
+    {
+      "label": "macro.py",
+      "file_type": "code",
+      "source_file": "compute/macro.py",
+      "source_location": "L1",
+      "id": "compute_macro_py",
+      "community": 4,
+      "norm_label": "macro.py"
+    },
+    {
+      "label": "_spark()",
+      "file_type": "code",
+      "source_file": "compute/macro.py",
+      "source_location": "L17",
+      "id": "compute_macro_spark",
+      "community": 4,
+      "norm_label": "_spark()"
+    },
+    {
+      "label": "_fmt()",
+      "file_type": "code",
+      "source_file": "compute/macro.py",
+      "source_location": "L28",
+      "id": "compute_macro_fmt",
+      "community": 4,
+      "norm_label": "_fmt()"
+    },
+    {
+      "label": "_dir()",
+      "file_type": "code",
+      "source_file": "compute/macro.py",
+      "source_location": "L42",
+      "id": "compute_macro_dir",
+      "community": 4,
+      "norm_label": "_dir()"
+    },
+    {
+      "label": "_quote_card()",
+      "file_type": "code",
+      "source_file": "compute/macro.py",
+      "source_location": "L48",
+      "id": "compute_macro_quote_card",
+      "community": 4,
+      "norm_label": "_quote_card()"
+    },
+    {
+      "label": "_econ_series_fmp()",
+      "file_type": "code",
+      "source_file": "compute/macro.py",
+      "source_location": "L68",
+      "id": "compute_macro_econ_series_fmp",
+      "community": 4,
+      "norm_label": "_econ_series_fmp()"
+    },
+    {
+      "label": "_econ_series_fred()",
+      "file_type": "code",
+      "source_file": "compute/macro.py",
+      "source_location": "L81",
+      "id": "compute_macro_econ_series_fred",
+      "community": 4,
+      "norm_label": "_econ_series_fred()"
+    },
+    {
+      "label": "_econ_card()",
+      "file_type": "code",
+      "source_file": "compute/macro.py",
+      "source_location": "L97",
+      "id": "compute_macro_econ_card",
+      "community": 4,
+      "norm_label": "_econ_card()"
+    },
+    {
+      "label": "cards()",
+      "file_type": "code",
+      "source_file": "compute/macro.py",
+      "source_location": "L117",
+      "id": "compute_macro_cards",
+      "community": 4,
+      "norm_label": "cards()"
+    },
+    {
+      "label": "Panel macro. Cada tarjeta sale de:   kind=\"quote\" -> s\u00edmbolo cotizado (FX, commo",
+      "file_type": "rationale",
+      "source_file": "compute/macro.py",
+      "source_location": "L1",
+      "id": "compute_macro_rationale_1",
+      "community": 4,
+      "norm_label": "panel macro. cada tarjeta sale de:   kind=\"quote\" -> simbolo cotizado (fx, commo"
+    },
+    {
+      "label": "Submuestrea a 'points' valores para el sparkline.",
+      "file_type": "rationale",
+      "source_file": "compute/macro.py",
+      "source_location": "L18",
+      "id": "compute_macro_rationale_18",
+      "community": 4,
+      "norm_label": "submuestrea a 'points' valores para el sparkline."
+    },
+    {
+      "label": "roro.py",
+      "file_type": "code",
+      "source_file": "compute/roro.py",
+      "source_location": "L1",
+      "id": "compute_roro_py",
+      "community": 9,
+      "norm_label": "roro.py"
+    },
+    {
+      "label": "_z_last()",
+      "file_type": "code",
+      "source_file": "compute/roro.py",
+      "source_location": "L15",
+      "id": "compute_roro_z_last",
+      "community": 9,
+      "norm_label": "_z_last()"
+    },
+    {
+      "label": "_close()",
+      "file_type": "code",
+      "source_file": "compute/roro.py",
+      "source_location": "L25",
+      "id": "compute_roro_close",
+      "community": 9,
+      "norm_label": "_close()"
+    },
+    {
+      "label": "components()",
+      "file_type": "code",
+      "source_file": "compute/roro.py",
+      "source_location": "L30",
+      "id": "compute_roro_components",
+      "community": 9,
+      "norm_label": "components()"
+    },
+    {
+      "label": "regime()",
+      "file_type": "code",
+      "source_file": "compute/roro.py",
+      "source_location": "L59",
+      "id": "compute_roro_regime",
+      "community": 9,
+      "norm_label": "regime()"
+    },
+    {
+      "label": "RORO \u2014 risk-on / risk-off. Term\u00f3metro de r\u00e9gimen.  Para cada componente (un rati",
+      "file_type": "rationale",
+      "source_file": "compute/roro.py",
+      "source_location": "L1",
+      "id": "compute_roro_rationale_1",
+      "community": 9,
+      "norm_label": "roro \u2014 risk-on / risk-off. termometro de regimen.  para cada componente (un rati"
+    },
+    {
+      "label": "Devuelve (lista [[name, z], ...], compuesto). price_lookup(sym)->bars.",
+      "file_type": "rationale",
+      "source_file": "compute/roro.py",
+      "source_location": "L31",
+      "id": "compute_roro_rationale_31",
+      "community": 9,
+      "norm_label": "devuelve (lista [[name, z], ...], compuesto). price_lookup(sym)->bars."
+    }
+  ],
+  "links": [
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "config.py",
+      "source_location": "L1",
+      "weight": 1.0,
+      "source": "flujos_globales_config_rationale_1",
+      "target": "config_py",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "demo_data.py",
+      "source_location": "L13",
+      "weight": 1.0,
+      "source": "demo_data_py",
+      "target": "flujos_globales_demo_data_seed",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "demo_data.py",
+      "source_location": "L20",
+      "weight": 1.0,
+      "source": "demo_data_py",
+      "target": "flujos_globales_demo_data_metrics",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "demo_data.py",
+      "source_location": "L29",
+      "weight": 1.0,
+      "source": "demo_data_py",
+      "target": "flujos_globales_demo_data_tree",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "demo_data.py",
+      "source_location": "L45",
+      "weight": 1.0,
+      "source": "demo_data_py",
+      "target": "flujos_globales_demo_data_rrg",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "demo_data.py",
+      "source_location": "L58",
+      "weight": 1.0,
+      "source": "demo_data_py",
+      "target": "flujos_globales_demo_data_roro",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "demo_data.py",
+      "source_location": "L65",
+      "weight": 1.0,
+      "source": "demo_data_py",
+      "target": "flujos_globales_demo_data_regime",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "demo_data.py",
+      "source_location": "L73",
+      "weight": 1.0,
+      "source": "demo_data_py",
+      "target": "flujos_globales_demo_data_cot",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "demo_data.py",
+      "source_location": "L79",
+      "weight": 1.0,
+      "source": "demo_data_py",
+      "target": "flujos_globales_demo_data_macro",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "demo_data.py",
+      "source_location": "L102",
+      "weight": 1.0,
+      "source": "demo_data_py",
+      "target": "flujos_globales_demo_data_news",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "demo_data.py",
+      "source_location": "L113",
+      "weight": 1.0,
+      "source": "demo_data_py",
+      "target": "flujos_globales_demo_data_snapshot",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "demo_data.py",
+      "source_location": "L1",
+      "weight": 1.0,
+      "source": "flujos_globales_demo_data_rationale_1",
+      "target": "demo_data_py",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "demo_data.py",
+      "source_location": "L22",
+      "weight": 1.0,
+      "source": "flujos_globales_demo_data_metrics",
+      "target": "flujos_globales_demo_data_seed",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "demo_data.py",
+      "source_location": "L33",
+      "weight": 1.0,
+      "source": "flujos_globales_demo_data_tree",
+      "target": "flujos_globales_demo_data_seed",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "demo_data.py",
+      "source_location": "L30",
+      "weight": 1.0,
+      "source": "flujos_globales_demo_data_tree",
+      "target": "flujos_globales_demo_data_metrics",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "demo_data.py",
+      "source_location": "L48",
+      "weight": 1.0,
+      "source": "flujos_globales_demo_data_rrg",
+      "target": "flujos_globales_demo_data_metrics",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "demo_data.py",
+      "source_location": "L21",
+      "weight": 1.0,
+      "source": "flujos_globales_demo_data_rationale_21",
+      "target": "flujos_globales_demo_data_metrics",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "demo_data.py",
+      "source_location": "L124",
+      "weight": 1.0,
+      "source": "flujos_globales_demo_data_snapshot",
+      "target": "flujos_globales_demo_data_tree",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "demo_data.py",
+      "source_location": "L120",
+      "weight": 1.0,
+      "source": "flujos_globales_demo_data_snapshot",
+      "target": "flujos_globales_demo_data_rrg",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "demo_data.py",
+      "source_location": "L114",
+      "weight": 1.0,
+      "source": "flujos_globales_demo_data_snapshot",
+      "target": "flujos_globales_demo_data_roro",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "demo_data.py",
+      "source_location": "L119",
+      "weight": 1.0,
+      "source": "flujos_globales_demo_data_snapshot",
+      "target": "flujos_globales_demo_data_regime",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "demo_data.py",
+      "source_location": "L123",
+      "weight": 1.0,
+      "source": "flujos_globales_demo_data_snapshot",
+      "target": "flujos_globales_demo_data_cot",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "demo_data.py",
+      "source_location": "L125",
+      "weight": 1.0,
+      "source": "flujos_globales_demo_data_snapshot",
+      "target": "flujos_globales_demo_data_macro",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "demo_data.py",
+      "source_location": "L126",
+      "weight": 1.0,
+      "source": "flujos_globales_demo_data_snapshot",
+      "target": "flujos_globales_demo_data_news",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "cache.py",
+      "source_location": "L14",
+      "weight": 1.0,
+      "source": "cache_py",
+      "target": "flujos_globales_cache_path",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "cache.py",
+      "source_location": "L19",
+      "weight": 1.0,
+      "source": "cache_py",
+      "target": "flujos_globales_cache_get",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "cache.py",
+      "source_location": "L34",
+      "weight": 1.0,
+      "source": "cache_py",
+      "target": "flujos_globales_cache_set",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "cache.py",
+      "source_location": "L45",
+      "weight": 1.0,
+      "source": "cache_py",
+      "target": "flujos_globales_cache_clear",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "cache.py",
+      "source_location": "L1",
+      "weight": 1.0,
+      "source": "flujos_globales_cache_rationale_1",
+      "target": "cache_py",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "cache.py",
+      "source_location": "L21",
+      "weight": 1.0,
+      "source": "flujos_globales_cache_get",
+      "target": "flujos_globales_cache_path",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "cache.py",
+      "source_location": "L36",
+      "weight": 1.0,
+      "source": "flujos_globales_cache_set",
+      "target": "flujos_globales_cache_path",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "cache.py",
+      "source_location": "L20",
+      "weight": 1.0,
+      "source": "flujos_globales_cache_rationale_20",
+      "target": "flujos_globales_cache_get",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "cache.py",
+      "source_location": "L35",
+      "weight": 1.0,
+      "source": "flujos_globales_cache_rationale_35",
+      "target": "flujos_globales_cache_set",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "INFERRED",
+      "confidence_score": 0.8,
+      "source_file": "universe.py",
+      "source_location": "L147",
+      "weight": 1.0,
+      "source": "flujos_globales_universe_all_symbols",
+      "target": "flujos_globales_cache_set"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app.py",
+      "source_location": "L35",
+      "weight": 1.0,
+      "source": "app_py",
+      "target": "flujos_globales_app_prefetch",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app.py",
+      "source_location": "L40",
+      "weight": 1.0,
+      "source": "app_py",
+      "target": "flujos_globales_app_lookup",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app.py",
+      "source_location": "L47",
+      "weight": 1.0,
+      "source": "app_py",
+      "target": "flujos_globales_app_agg",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app.py",
+      "source_location": "L60",
+      "weight": 1.0,
+      "source": "app_py",
+      "target": "flujos_globales_app_build_node",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app.py",
+      "source_location": "L105",
+      "weight": 1.0,
+      "source": "app_py",
+      "target": "flujos_globales_app_live_snapshot",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app.py",
+      "source_location": "L159",
+      "weight": 1.0,
+      "source": "app_py",
+      "target": "flujos_globales_app_openbb_available",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app.py",
+      "source_location": "L171",
+      "weight": 1.0,
+      "source": "app_py",
+      "target": "flujos_globales_app_index",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app.py",
+      "source_location": "L176",
+      "weight": 1.0,
+      "source": "app_py",
+      "target": "flujos_globales_app_snapshot",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app.py",
+      "source_location": "L191",
+      "weight": 1.0,
+      "source": "app_py",
+      "target": "flujos_globales_app_health",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "app.py",
+      "source_location": "L1",
+      "weight": 1.0,
+      "source": "flujos_globales_app_rationale_1",
+      "target": "app_py",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "app.py",
+      "source_location": "L109",
+      "weight": 1.0,
+      "source": "flujos_globales_app_live_snapshot",
+      "target": "flujos_globales_app_prefetch",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "app.py",
+      "source_location": "L68",
+      "weight": 1.0,
+      "source": "flujos_globales_app_build_node",
+      "target": "flujos_globales_app_lookup",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "app.py",
+      "source_location": "L110",
+      "weight": 1.0,
+      "source": "flujos_globales_app_live_snapshot",
+      "target": "flujos_globales_app_lookup",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "app.py",
+      "source_location": "L81",
+      "weight": 1.0,
+      "source": "flujos_globales_app_build_node",
+      "target": "flujos_globales_app_agg",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "app.py",
+      "source_location": "L48",
+      "weight": 1.0,
+      "source": "flujos_globales_app_rationale_48",
+      "target": "flujos_globales_app_agg",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "app.py",
+      "source_location": "L124",
+      "weight": 1.0,
+      "source": "flujos_globales_app_live_snapshot",
+      "target": "flujos_globales_app_build_node",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "app.py",
+      "source_location": "L185",
+      "weight": 1.0,
+      "source": "flujos_globales_app_snapshot",
+      "target": "flujos_globales_app_live_snapshot",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "app.py",
+      "source_location": "L144",
+      "weight": 1.0,
+      "source": "flujos_globales_app_live_snapshot",
+      "target": "flujos_globales_app_openbb_available",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "app.py",
+      "source_location": "L194",
+      "weight": 1.0,
+      "source": "flujos_globales_app_health",
+      "target": "flujos_globales_app_openbb_available",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "universe.py",
+      "source_location": "L17",
+      "weight": 1.0,
+      "source": "universe_py",
+      "target": "flujos_globales_universe_node",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "universe.py",
+      "source_location": "L145",
+      "weight": 1.0,
+      "source": "universe_py",
+      "target": "flujos_globales_universe_all_symbols",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "universe.py",
+      "source_location": "L1",
+      "weight": 1.0,
+      "source": "flujos_globales_universe_rationale_1",
+      "target": "universe_py",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "universe.py",
+      "source_location": "L146",
+      "weight": 1.0,
+      "source": "flujos_globales_universe_rationale_146",
+      "target": "flujos_globales_universe_all_symbols",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "fmp_client.py",
+      "source_location": "L16",
+      "weight": 1.0,
+      "source": "fmp_client_py",
+      "target": "flujos_globales_fmp_client_get",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "fmp_client.py",
+      "source_location": "L44",
+      "weight": 1.0,
+      "source": "fmp_client_py",
+      "target": "flujos_globales_fmp_client_historical",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "fmp_client.py",
+      "source_location": "L75",
+      "weight": 1.0,
+      "source": "fmp_client_py",
+      "target": "flujos_globales_fmp_client_quote",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "fmp_client.py",
+      "source_location": "L87",
+      "weight": 1.0,
+      "source": "fmp_client_py",
+      "target": "flujos_globales_fmp_client_etf_holding_dates",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "fmp_client.py",
+      "source_location": "L100",
+      "weight": 1.0,
+      "source": "fmp_client_py",
+      "target": "flujos_globales_fmp_client_etf_holdings",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "fmp_client.py",
+      "source_location": "L111",
+      "weight": 1.0,
+      "source": "fmp_client_py",
+      "target": "flujos_globales_fmp_client_cot",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "fmp_client.py",
+      "source_location": "L120",
+      "weight": 1.0,
+      "source": "fmp_client_py",
+      "target": "flujos_globales_fmp_client_economic",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "fmp_client.py",
+      "source_location": "L1",
+      "weight": 1.0,
+      "source": "flujos_globales_fmp_client_rationale_1",
+      "target": "fmp_client_py",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "fmp_client.py",
+      "source_location": "L51",
+      "weight": 1.0,
+      "source": "flujos_globales_fmp_client_historical",
+      "target": "flujos_globales_fmp_client_get",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "fmp_client.py",
+      "source_location": "L78",
+      "weight": 1.0,
+      "source": "flujos_globales_fmp_client_quote",
+      "target": "flujos_globales_fmp_client_get",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "fmp_client.py",
+      "source_location": "L90",
+      "weight": 1.0,
+      "source": "flujos_globales_fmp_client_etf_holding_dates",
+      "target": "flujos_globales_fmp_client_get",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "fmp_client.py",
+      "source_location": "L103",
+      "weight": 1.0,
+      "source": "flujos_globales_fmp_client_etf_holdings",
+      "target": "flujos_globales_fmp_client_get",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "fmp_client.py",
+      "source_location": "L114",
+      "weight": 1.0,
+      "source": "flujos_globales_fmp_client_cot",
+      "target": "flujos_globales_fmp_client_get",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "fmp_client.py",
+      "source_location": "L123",
+      "weight": 1.0,
+      "source": "flujos_globales_fmp_client_economic",
+      "target": "flujos_globales_fmp_client_get",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "fmp_client.py",
+      "source_location": "L17",
+      "weight": 1.0,
+      "source": "flujos_globales_fmp_client_rationale_17",
+      "target": "flujos_globales_fmp_client_get",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "fmp_client.py",
+      "source_location": "L45",
+      "weight": 1.0,
+      "source": "flujos_globales_fmp_client_rationale_45",
+      "target": "flujos_globales_fmp_client_historical",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "fmp_client.py",
+      "source_location": "L76",
+      "weight": 1.0,
+      "source": "flujos_globales_fmp_client_rationale_76",
+      "target": "flujos_globales_fmp_client_quote",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "fmp_client.py",
+      "source_location": "L88",
+      "weight": 1.0,
+      "source": "flujos_globales_fmp_client_rationale_88",
+      "target": "flujos_globales_fmp_client_etf_holding_dates",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "fmp_client.py",
+      "source_location": "L101",
+      "weight": 1.0,
+      "source": "flujos_globales_fmp_client_rationale_101",
+      "target": "flujos_globales_fmp_client_etf_holdings",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "fmp_client.py",
+      "source_location": "L112",
+      "weight": 1.0,
+      "source": "flujos_globales_fmp_client_rationale_112",
+      "target": "flujos_globales_fmp_client_cot",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "fmp_client.py",
+      "source_location": "L121",
+      "weight": 1.0,
+      "source": "flujos_globales_fmp_client_rationale_121",
+      "target": "flujos_globales_fmp_client_economic",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "compute/flows.py",
+      "source_location": "L19",
+      "weight": 1.0,
+      "source": "compute_flows_py",
+      "target": "compute_flows_aum",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "compute/flows.py",
+      "source_location": "L37",
+      "weight": 1.0,
+      "source": "compute_flows_py",
+      "target": "compute_flows_close_on_or_before",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "compute/flows.py",
+      "source_location": "L48",
+      "weight": 1.0,
+      "source": "compute_flows_py",
+      "target": "compute_flows_implied_flow",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "compute/flows.py",
+      "source_location": "L1",
+      "weight": 1.0,
+      "source": "compute_flows_rationale_1",
+      "target": "compute_flows_py",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "compute/flows.py",
+      "source_location": "L58",
+      "weight": 1.0,
+      "source": "compute_flows_implied_flow",
+      "target": "compute_flows_aum",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "compute/flows.py",
+      "source_location": "L64",
+      "weight": 1.0,
+      "source": "compute_flows_implied_flow",
+      "target": "compute_flows_close_on_or_before",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "compute/flows.py",
+      "source_location": "L38",
+      "weight": 1.0,
+      "source": "compute_flows_rationale_38",
+      "target": "compute_flows_close_on_or_before",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "compute/flows.py",
+      "source_location": "L49",
+      "weight": 1.0,
+      "source": "compute_flows_rationale_49",
+      "target": "compute_flows_implied_flow",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "compute/news.py",
+      "source_location": "L21",
+      "weight": 1.0,
+      "source": "compute_news_py",
+      "target": "compute_news_sentiment",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "compute/news.py",
+      "source_location": "L30",
+      "weight": 1.0,
+      "source": "compute_news_py",
+      "target": "compute_news_hhmm",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "compute/news.py",
+      "source_location": "L37",
+      "weight": 1.0,
+      "source": "compute_news_py",
+      "target": "compute_news_from_openbb",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "compute/news.py",
+      "source_location": "L58",
+      "weight": 1.0,
+      "source": "compute_news_py",
+      "target": "compute_news_from_fmp",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "compute/news.py",
+      "source_location": "L80",
+      "weight": 1.0,
+      "source": "compute_news_py",
+      "target": "compute_news_headlines",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "compute/news.py",
+      "source_location": "L1",
+      "weight": 1.0,
+      "source": "compute_news_rationale_1",
+      "target": "compute_news_py",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "compute/news.py",
+      "source_location": "L51",
+      "weight": 1.0,
+      "source": "compute_news_from_openbb",
+      "target": "compute_news_sentiment",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "compute/news.py",
+      "source_location": "L76",
+      "weight": 1.0,
+      "source": "compute_news_from_fmp",
+      "target": "compute_news_sentiment",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "compute/news.py",
+      "source_location": "L50",
+      "weight": 1.0,
+      "source": "compute_news_from_openbb",
+      "target": "compute_news_hhmm",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "compute/news.py",
+      "source_location": "L75",
+      "weight": 1.0,
+      "source": "compute_news_from_fmp",
+      "target": "compute_news_hhmm",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "compute/news.py",
+      "source_location": "L84",
+      "weight": 1.0,
+      "source": "compute_news_headlines",
+      "target": "compute_news_from_openbb",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "compute/news.py",
+      "source_location": "L84",
+      "weight": 1.0,
+      "source": "compute_news_headlines",
+      "target": "compute_news_from_fmp",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "compute/rrg.py",
+      "source_location": "L23",
+      "weight": 1.0,
+      "source": "compute_rrg_py",
+      "target": "compute_rrg_series",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "compute/rrg.py",
+      "source_location": "L31",
+      "weight": 1.0,
+      "source": "compute_rrg_py",
+      "target": "compute_rrg_ratio_momentum",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "compute/rrg.py",
+      "source_location": "L42",
+      "weight": 1.0,
+      "source": "compute_rrg_py",
+      "target": "compute_rrg_point",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "compute/rrg.py",
+      "source_location": "L70",
+      "weight": 1.0,
+      "source": "compute_rrg_py",
+      "target": "compute_rrg_dataset",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "compute/rrg.py",
+      "source_location": "L1",
+      "weight": 1.0,
+      "source": "compute_rrg_rationale_1",
+      "target": "compute_rrg_py",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "compute/rrg.py",
+      "source_location": "L49",
+      "weight": 1.0,
+      "source": "compute_rrg_point",
+      "target": "compute_rrg_series",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "compute/rrg.py",
+      "source_location": "L24",
+      "weight": 1.0,
+      "source": "compute_rrg_rationale_24",
+      "target": "compute_rrg_series",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "compute/rrg.py",
+      "source_location": "L57",
+      "weight": 1.0,
+      "source": "compute_rrg_point",
+      "target": "compute_rrg_ratio_momentum",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "compute/rrg.py",
+      "source_location": "L77",
+      "weight": 1.0,
+      "source": "compute_rrg_dataset",
+      "target": "compute_rrg_point",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "compute/rrg.py",
+      "source_location": "L43",
+      "weight": 1.0,
+      "source": "compute_rrg_rationale_43",
+      "target": "compute_rrg_point",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "compute/rrg.py",
+      "source_location": "L71",
+      "weight": 1.0,
+      "source": "compute_rrg_rationale_71",
+      "target": "compute_rrg_dataset",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "compute/cot.py",
+      "source_location": "L17",
+      "weight": 1.0,
+      "source": "compute_cot_py",
+      "target": "compute_cot_pick",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "compute/cot.py",
+      "source_location": "L27",
+      "weight": 1.0,
+      "source": "compute_cot_py",
+      "target": "compute_cot_net_position",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "compute/cot.py",
+      "source_location": "L45",
+      "weight": 1.0,
+      "source": "compute_cot_py",
+      "target": "compute_cot_table",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "compute/cot.py",
+      "source_location": "L1",
+      "weight": 1.0,
+      "source": "compute_cot_rationale_1",
+      "target": "compute_cot_py",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "compute/cot.py",
+      "source_location": "L34",
+      "weight": 1.0,
+      "source": "compute_cot_net_position",
+      "target": "compute_cot_pick",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "compute/cot.py",
+      "source_location": "L49",
+      "weight": 1.0,
+      "source": "compute_cot_table",
+      "target": "compute_cot_net_position",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "compute/cot.py",
+      "source_location": "L28",
+      "weight": 1.0,
+      "source": "compute_cot_rationale_28",
+      "target": "compute_cot_net_position",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "compute/cot.py",
+      "source_location": "L46",
+      "weight": 1.0,
+      "source": "compute_cot_rationale_46",
+      "target": "compute_cot_table",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "compute/cmf.py",
+      "source_location": "L19",
+      "weight": 1.0,
+      "source": "compute_cmf_py",
+      "target": "compute_cmf_cmf",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "compute/cmf.py",
+      "source_location": "L1",
+      "weight": 1.0,
+      "source": "compute_cmf_rationale_1",
+      "target": "compute_cmf_py",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "compute/cmf.py",
+      "source_location": "L20",
+      "weight": 1.0,
+      "source": "compute_cmf_rationale_20",
+      "target": "compute_cmf_cmf",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "compute/macro.py",
+      "source_location": "L17",
+      "weight": 1.0,
+      "source": "compute_macro_py",
+      "target": "compute_macro_spark",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "compute/macro.py",
+      "source_location": "L28",
+      "weight": 1.0,
+      "source": "compute_macro_py",
+      "target": "compute_macro_fmt",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "compute/macro.py",
+      "source_location": "L42",
+      "weight": 1.0,
+      "source": "compute_macro_py",
+      "target": "compute_macro_dir",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "compute/macro.py",
+      "source_location": "L48",
+      "weight": 1.0,
+      "source": "compute_macro_py",
+      "target": "compute_macro_quote_card",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "compute/macro.py",
+      "source_location": "L68",
+      "weight": 1.0,
+      "source": "compute_macro_py",
+      "target": "compute_macro_econ_series_fmp",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "compute/macro.py",
+      "source_location": "L81",
+      "weight": 1.0,
+      "source": "compute_macro_py",
+      "target": "compute_macro_econ_series_fred",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "compute/macro.py",
+      "source_location": "L97",
+      "weight": 1.0,
+      "source": "compute_macro_py",
+      "target": "compute_macro_econ_card",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "compute/macro.py",
+      "source_location": "L117",
+      "weight": 1.0,
+      "source": "compute_macro_py",
+      "target": "compute_macro_cards",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "compute/macro.py",
+      "source_location": "L1",
+      "weight": 1.0,
+      "source": "compute_macro_rationale_1",
+      "target": "compute_macro_py",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "compute/macro.py",
+      "source_location": "L61",
+      "weight": 1.0,
+      "source": "compute_macro_quote_card",
+      "target": "compute_macro_spark",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "compute/macro.py",
+      "source_location": "L110",
+      "weight": 1.0,
+      "source": "compute_macro_econ_card",
+      "target": "compute_macro_spark",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "compute/macro.py",
+      "source_location": "L18",
+      "weight": 1.0,
+      "source": "compute_macro_rationale_18",
+      "target": "compute_macro_spark",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "compute/macro.py",
+      "source_location": "L63",
+      "weight": 1.0,
+      "source": "compute_macro_quote_card",
+      "target": "compute_macro_fmt",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "compute/macro.py",
+      "source_location": "L108",
+      "weight": 1.0,
+      "source": "compute_macro_econ_card",
+      "target": "compute_macro_fmt",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "compute/macro.py",
+      "source_location": "L64",
+      "weight": 1.0,
+      "source": "compute_macro_quote_card",
+      "target": "compute_macro_dir",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "compute/macro.py",
+      "source_location": "L109",
+      "weight": 1.0,
+      "source": "compute_macro_econ_card",
+      "target": "compute_macro_dir",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "compute/macro.py",
+      "source_location": "L122",
+      "weight": 1.0,
+      "source": "compute_macro_cards",
+      "target": "compute_macro_quote_card",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "compute/macro.py",
+      "source_location": "L98",
+      "weight": 1.0,
+      "source": "compute_macro_econ_card",
+      "target": "compute_macro_econ_series_fmp",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "compute/macro.py",
+      "source_location": "L100",
+      "weight": 1.0,
+      "source": "compute_macro_econ_card",
+      "target": "compute_macro_econ_series_fred",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "compute/macro.py",
+      "source_location": "L121",
+      "weight": 1.0,
+      "source": "compute_macro_cards",
+      "target": "compute_macro_econ_card",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "compute/roro.py",
+      "source_location": "L15",
+      "weight": 1.0,
+      "source": "compute_roro_py",
+      "target": "compute_roro_z_last",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "compute/roro.py",
+      "source_location": "L25",
+      "weight": 1.0,
+      "source": "compute_roro_py",
+      "target": "compute_roro_close",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "compute/roro.py",
+      "source_location": "L30",
+      "weight": 1.0,
+      "source": "compute_roro_py",
+      "target": "compute_roro_components",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "compute/roro.py",
+      "source_location": "L59",
+      "weight": 1.0,
+      "source": "compute_roro_py",
+      "target": "compute_roro_regime",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "compute/roro.py",
+      "source_location": "L1",
+      "weight": 1.0,
+      "source": "compute_roro_rationale_1",
+      "target": "compute_roro_py",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "compute/roro.py",
+      "source_location": "L47",
+      "weight": 1.0,
+      "source": "compute_roro_components",
+      "target": "compute_roro_z_last",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "compute/roro.py",
+      "source_location": "L38",
+      "weight": 1.0,
+      "source": "compute_roro_components",
+      "target": "compute_roro_close",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "compute/roro.py",
+      "source_location": "L31",
+      "weight": 1.0,
+      "source": "compute_roro_rationale_31",
+      "target": "compute_roro_components",
+      "confidence_score": 1.0
+    }
+  ],
+  "hyperedges": []
+}

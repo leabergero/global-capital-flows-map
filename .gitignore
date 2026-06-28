@@ -1,0 +1,14 @@
+# secretos — JAMÁS al repo
+.env
+
+# caché en disco
+cache/*.json
+
+# python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# sistema
+.DS_Store

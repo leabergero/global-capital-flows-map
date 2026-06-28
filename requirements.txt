@@ -1,0 +1,21 @@
+Flask>=3.0
+python-dotenv>=1.0
+requests>=2.31
+numpy>=1.26
+pandas>=2.1
+yfinance>=0.2.30
+
+# --- Extensiones de datos (todas opcionales pero recomendadas) ---
+# openbb>=4.3          (noticias globales + acceso avanzado a FRED)
+# fredapi>=0.5.1       (indicadores económicos FRED)
+# quandl>=3.9.0        (COT data - Commitment of Traders)
+#
+# Sin ellas: degradan a demo. Se usan sin instalar (graceful degradation).
+#
+# Para obtener keys gratis:
+#   - FRED: https://fred.stlouisfed.org/docs/api/
+#   - Quandl: https://www.quandl.com/ (registro gratis)
+#
+openbb>=4.3
+fredapi>=0.5.1
+quandl>=3.7.0

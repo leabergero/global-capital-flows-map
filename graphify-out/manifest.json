@@ -1,0 +1,74 @@
+{
+  "/home/leandro/V\u00eddeos/flujos-globales/config.py": {
+    "mtime": 1782665731.0,
+    "hash": "6ec9526d79b4dfb477ecaa585153064b"
+  },
+  "/home/leandro/V\u00eddeos/flujos-globales/demo_data.py": {
+    "mtime": 1782665997.0,
+    "hash": "b304e7aa1558d02c6e9aea01f5fcef0d"
+  },
+  "/home/leandro/V\u00eddeos/flujos-globales/cache.py": {
+    "mtime": 1782665740.0,
+    "hash": "770f8d583e858569f986ccd5f92cc121"
+  },
+  "/home/leandro/V\u00eddeos/flujos-globales/app.py": {
+    "mtime": 1782666485.0,
+    "hash": "fa7139bb767b18a3eff65a3463b9ddf8"
+  },
+  "/home/leandro/V\u00eddeos/flujos-globales/universe.py": {
+    "mtime": 1782666327.0,
+    "hash": "8eef2ec4192a0a3bc3e23e4339387957"
+  },
+  "/home/leandro/V\u00eddeos/flujos-globales/fmp_client.py": {
+    "mtime": 1782665765.0,
+    "hash": "1e6c5ad31512345eb9658c4b5dc4c9bf"
+  },
+  "/home/leandro/V\u00eddeos/flujos-globales/compute/flows.py": {
+    "mtime": 1782665892.0,
+    "hash": "bf923cd8eca9ad03baaab1d5dc4f64e0"
+  },
+  "/home/leandro/V\u00eddeos/flujos-globales/compute/news.py": {
+    "mtime": 1782665957.0,
+    "hash": "d96eca3e6714826bc0bd4dc6eb1db07d"
+  },
+  "/home/leandro/V\u00eddeos/flujos-globales/compute/__init__.py": {
+    "mtime": 1782665851.0,
+    "hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "/home/leandro/V\u00eddeos/flujos-globales/compute/rrg.py": {
+    "mtime": 1782665869.0,
+    "hash": "2ce42acbb111024a45fe3960d6cb0316"
+  },
+  "/home/leandro/V\u00eddeos/flujos-globales/compute/cot.py": {
+    "mtime": 1782665917.0,
+    "hash": "6e3f490bb04d69707986acf9aee4eac8"
+  },
+  "/home/leandro/V\u00eddeos/flujos-globales/compute/cmf.py": {
+    "mtime": 1782665878.0,
+    "hash": "07d5ad9de4b7c85d61dcb5b171154c65"
+  },
+  "/home/leandro/V\u00eddeos/flujos-globales/compute/macro.py": {
+    "mtime": 1782665943.0,
+    "hash": "948b173d5644577084e38725078259b8"
+  },
+  "/home/leandro/V\u00eddeos/flujos-globales/compute/roro.py": {
+    "mtime": 1782665907.0,
+    "hash": "96301b26faebc8d3c7f5ab43a415378a"
+  },
+  "/home/leandro/V\u00eddeos/flujos-globales/CLAUDE.md": {
+    "mtime": 1782667083.4174993,
+    "hash": "94d87b3f625d32904279c18031534e56"
+  },
+  "/home/leandro/V\u00eddeos/flujos-globales/README.md": {
+    "mtime": 1782666317.0,
+    "hash": "7ff57500e51fe6b7387e891f6536ed26"
+  },
+  "/home/leandro/V\u00eddeos/flujos-globales/requirements.txt": {
+    "mtime": 1782666268.0,
+    "hash": "9c381e67497be2940bb8f8a5e068271e"
+  },
+  "/home/leandro/V\u00eddeos/flujos-globales/static/index.html": {
+    "mtime": 1782666194.0,
+    "hash": "d4a6e198b25aaaf5a365f4ddf249f161"
+  }
+}
