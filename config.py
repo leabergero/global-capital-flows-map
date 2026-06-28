@@ -80,7 +80,7 @@ BENCH_CROSS = "ACWI"   # cross-asset vs índice mundial (cambiá a "URTH"/"VT" s
 # --- componentes RORO (pares de símbolos; ratio = a/b, signo risk-on +) -----
 # Para "inv" se invierte el signo del z-score (sube cuando baja el ratio).
 RORO_COMPONENTS = [
-    {"name": "SPY / TLT",          "a": "SPY",  "b": "TLT",  "inv": False},
+    {"name": "SPY / Bonos USA",    "a": "SPY",  "b": "TLT",  "inv": False},
     {"name": "Cobre / Oro",        "a": "CPER", "b": "GLD",  "inv": False},
     {"name": "Cíclicos / Defens.", "a": "XLY",  "b": "XLP",  "inv": False},
     {"name": "Spread HY (inv)",    "a": "HYG",  "b": "IEF",  "inv": False},
