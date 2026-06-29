@@ -1,32 +1,41 @@
 # Mapa de Flujos Globales
 
-**Terminal cross-asset para visualizar rotación de capital** entre clases de activo, sectores e industrias.
+**Terminal cross-asset interactiva** que visualiza rotación de capital y régimen de mercado en tiempo real.
 
-Terminal interactiva que muestra:
-- **RRG (Relative Rotation Graph)**: rotación de sectores con análisis de cuadrantes
-- **RORO (Risk-On/Risk-Off)**: régimen de mercado con z-scores de ratios cíclicos/defensivos
-- **CMF (Chaikin Money Flow)**: presión de precios en el árbol jerárquico
-- **COT (Commitment of Traders)**: posicionamiento de especuladores
-- **Macro KPIs**: tasas, FX, commodities, inflación, volatilidad
-- **Noticias**: headlines con sentimiento
-- **Heatmap interactivo**: árbol jerárquico con navegación por niveles
+**Última actualización:** 2026-06-29
 
 ---
 
-## Arranque rápido
+## 🎯 ¿Qué es?
+
+Un dashboard financiero que muestra:
+
+- **RRG (Relative Rotation Graph)** - Rotación de 11 sectores + 8 clases de activo
+- **Heatmap jerárquico** - Árbol de activos con navegación por niveles (Equity → Sectores → Industrias → Stocks)
+- **Régimen RORO** - Risk-On/Risk-Off con z-scores de 5 ratios cíclicos/defensivos
+- **COT (Commitment of Traders)** - Posicionamiento de especuladores (semanal)
+- **KPIs Macro** - 17 indicadores: tasas, FX, commodities, inflación, volatilidad, cripto
+- **SPY/TLT Gauge** - Indicador de ciclo vs defensa (Equity vs Bonos)
+- **Gold/Silver Ratio** - Calculado desde Oro y Plata
+- **Noticias** - Headlines con sentimiento (OpenBB)
+
+**Modo**: Siempre LIVE con yfinance (gratis). Con keys opcionales → datos completos.
+
+---
+
+## 🚀 Arranque rápido
 
 ```bash
-# 1) Configurar keys (todas gratis)
-cp .env.example .env
-# Editar .env y agregar (opcional):
-#   FRED_API_KEY=<tu_fred_key>        (Federal Reserve Economic Data)
-#   QUANDL_API_KEY=<tu_quandl_key>    (COT - Commitment of Traders)
+# 1) Clonar y entrar
+git clone <tu-repo>
+cd flujos-globales
 
-# 2) Correr
+# 2) Correr (automatizado)
 bash run.sh
 
-# Manual
-python3 -m venv .venv && source .venv/bin/activate
+# O manual:
+python3 -m venv .venv
+source .venv/bin/activate
 pip install -r requirements.txt
 python app.py
 ```
@@ -35,150 +44,311 @@ Abrir **http://127.0.0.1:5000**
 
 ---
 
-## Arquitectura
+## 📊 Características principales
 
-### Backend (Flask - app.py)
+### 1. RRG Interactivo - 3 Ventanas temporales
+- **5d** (5 ruedas, últimas 5 lecturas) - Corto plazo
+- **20d** (20 barras, trending) - Mediano plazo
+- **50d** (50 barras, confirmación) - Largo plazo
+
+**Interactividad:**
+- Hover en cuadrante → resalta todos los sectores
+- Hover en línea → resalta un sector
+- Click en cuadrante → fija todos (resto desaparece)
+- Click en línea → fija un sector solo
+
+Cuadrantes:
+- **Verde (Líder)**: X≥100, Y≥100 - Fuerza y momentum positivo
+- **Ámbar (Debilitando)**: X≥100, Y<100 - Fuerza pero momentum negativo
+- **Rojo (Rezagado)**: X<100, Y<100 - Debilidad en ambos
+- **Azul (Mejorando)**: X<100, Y≥100 - Débil pero momentum positivo
+
+### 2. Heatmap Jerárquico
+- Navegación por niveles: Global → Clase → Sector → Industria → Stock
+- **Verde** = RS alcista (supera benchmark)
+- **Rojo** = RS bajista (cae vs benchmark)
+- **Glow dinámico** en hover
+- 3 métricas disponibles: RS (fuerza relativa), CMF (presión), Flujo (solo ETF)
+
+### 3. Régimen RORO
+- **Z-score compuesto** de 5 ratios:
+  - SPY / Bonos USA
+  - Cobre / Oro
+  - Cíclicos / Defensivos
+  - Spread HY (bonos alto rendimiento)
+  - VIX inverso
+
+**Estados:**
+- **BULLISH** (z ≥ +0.75) - Risk-On, confianza, dinero en riesgo
+- **NEUTRAL** (-0.75 < z < +0.75) - Transición
+- **BEARISH** (z ≤ -0.75) - Risk-Off, miedo, defensa predomina
+
+### 4. SPY/TLT Gauge
+- Barra vertical que sube/baja desde eje central
+- **Arriba (verde)**: SPY MERCADOS - Equity supera Bonos
+- **Abajo (roja)**: BONOS DEFENSA - Bonos supera Equity
+- **Escala dinámica** (5%, 25%, 50%, 100%) - Se ajusta automáticamente
+- **Glow latente** en la barra activa
+- Muestra diferencia % en KPI
+
+### 5. Gold/Silver Ratio
+- Calculado en vivo: Oro RS / Plata RS
+- Media histórica: 60:1
+- **Sube** = huida al oro (miedo, defensivo)
+- **Baja** = confianza en plata (riesgo, cíclico)
+
+### 6. Macro KPIs - 17 Indicadores
+Organizados por categoría:
+- **Tasas**: Fed funds, BCE, BoJ, PBoC
+- **Monedas**: EUR/USD, USD/JPY
+- **IPC**: USA, Eurozona
+- **Metales**: Oro, Plata, Gold/Silver
+- **Commodities**: WTI, Brent, UST 10Y
+- **Índices**: DXY, VIX, BTC
+
+Cada KPI muestra:
+- Valor actual
+- Cambio % con dirección (up/down/flat)
+- Sparkline de últimos ~12 períodos
+- Tooltip descriptivo
+
+### 7. Actualización Automática
+- **Recarga automática cada 1 hora** - Mantiene datos frescos
+- **Badge de estado** con hora de última actualización:
+  - 🟢 LIVE (datos en vivo vía FMP)
+  - 🟡 PARCIAL (mix de live y fallback demo)
+  - 🔴 DEMO (datos sintéticos)
+
+---
+
+## 📁 Arquitectura
+
 ```
+app.py                 Flask, rutas, orquestación
+config.py              ← EDITAR AQUÍ: símbolos, TTLs, benchmarks
+cache.py               Caché TTL en disco (JSON sha1)
+universe.py            Árbol jerárquico (clases → sectores → industrias → stocks)
+fmp_client.py          Wrapper centralizado de datos (yfinance, FRED, Quandl, FMP)
+
 compute/
-  ├─ rrg.py      RS-Ratio / RS-Momentum (fuerza relativa vs momentum)
-  ├─ cmf.py      Chaikin Money Flow (presión de precios)
-  ├─ roro.py     Risk-On/Off (z-scores de SPY/Bonos USA, Cobre/Oro, etc.)
-  ├─ cot.py      Commitment of Traders (especuladores)
-  ├─ macro.py    KPIs económicos (tasas, FX, commodities, inflación)
-  └─ news.py     Headlines con sentimiento
-  
-fmp_client.py    Wrapper de datos (yfinance, FRED, Quandl, FMP)
-cache.py         Caché TTL en disco
-config.py        Símbolos, parámetros, benchmarks ← editar aquí
-universe.py      Árbol jerárquico (clases → sectores → industrias → activos)
-```
+  ├─ rrg.py            RS-Ratio, RS-Momentum (método JdK documentado)
+  ├─ cmf.py            Chaikin Money Flow (presión de precios)
+  ├─ flows.py          Flujo implícito ETF (Δ AUM × NAV)
+  ├─ roro.py           Z-scores de ratios, régimen
+  ├─ cot.py            Posición neta no-comercial (Quandl)
+  ├─ macro.py          KPIs económicos (FRED, FMP, yfinance)
+  └─ news.py           Headlines con sentimiento (OpenBB, fallback FMP)
 
-### Frontend (vanilla JS + SVG)
-```
-static/index.html (sin build step, sin frameworks)
-  ├─ RRG interactivo (PixiJS + SVG fallback)
-  │   └─ Click en cuadrante = selecciona todos los sectores
-  │   └─ Click en línea/punto = selecciona un sector solo
-  ├─ Heatmap interactivo con glow dinámico
-  │   └─ Verde (positivo) / Rojo (negativo)
-  ├─ Tooltips visuales en macro KPIs
-  └─ Animaciones CSS fade-in y hover effects
+demo_data.py           Snapshot sintético (fallback por sección)
+static/index.html      Frontend vanilla JS + SVG (sin build, sin frameworks)
+static/favicon.ico     Icono personalizado
 ```
 
 ---
 
-## Fuentes de datos
+## 🔗 Contrato JSON (`/api/snapshot`)
+
+```jsonc
+{
+  "meta": {
+    "mode": "live|parcial|demo",
+    "generated": "ISO-8601",
+    "notes": ["secciones en fallback si las hay"]
+  },
+  
+  "regime": {
+    "state": "Risk-On|Neutral|Risk-Off",
+    "score": 0.36,           // z-score compuesto ±3
+    "color": "green|amber|red"
+  },
+  
+  "rrg": {
+    "sectores": [
+      {"name": "Energía", "rs": 104.6, "mom": 101.9, "path": [[x,y], ...]},
+      ...
+    ],
+    "cross": [...]           // 8 clases de activo
+  },
+  
+  "roro": [
+    ["SPY / Bonos USA", 0.9],
+    ["Cobre / Oro", -0.4],
+    ...
+  ],
+  
+  "cot": [
+    ["S&P fut · ES", 126, 18],  // [label, neto_miles, cambio_miles]
+    ...
+  ],
+  
+  "tree": {
+    "name": "Global",
+    "rs": 100.5,
+    "mom": 100.2,
+    "cmf": 0.15,
+    "flow": 125.4,              // millones USD (solo ETF, null para acciones)
+    "w": 1,
+    "children": [...]           // recursivo
+  },
+  
+  "macro": [
+    {"nm": "Fed funds", "val": "5.25", "chg": "+0.5%", "dir": "up", "s": [...]},
+    ...
+  ],
+  
+  "news": [
+    {"t": "headline", "src": "Reuters", "time": "2h ago", "sent": "pos|neg|neutral"},
+    ...
+  ]
+}
+```
+
+**Unidades:**
+- `rs`, `mom` ≈ 100 (centro = neutral)
+- `cmf` ∈ [-0.5, 0.5]
+- `flow` = millones USD (solo nodos ETF; acciones/cripto/FX = null)
+
+---
+
+## 📡 Fuentes de datos
 
 | Componente | Fuente | Costo | Requiere |
 |-----------|--------|-------|----------|
-| **Históricos de precio** | yfinance | Gratis | Nada |
-| **RRG Sectores/Cross** | yfinance | Gratis | Nada |
-| **CMF (presión)** | yfinance | Gratis | Nada |
-| **RORO (régimen)** | yfinance | Gratis | Nada |
-| **Cotizaciones** | yfinance | Gratis | Nada |
-| **Indicadores económicos** | FRED | Gratis | FRED_API_KEY |
-| **COT (Traders)** | Quandl | Gratis | QUANDL_API_KEY |
-| **Noticias** | OpenBB | Gratis | Instalado |
-| **Flujo ETF** | FMP | Gratis | FMP_API_KEY |
+| Históricos precio | yfinance | Gratis | Nada |
+| RRG, CMF, RORO | yfinance | Gratis | Nada |
+| Cotizaciones spot | yfinance | Gratis | Nada |
+| Indicadores económicos | FRED | Gratis | `FRED_API_KEY` (opcional) |
+| COT (Traders) | Quandl | Gratis | `QUANDL_API_KEY` (opcional) |
+| Noticias | OpenBB | Gratis | Instalado en venv |
+| Flujo ETF | FMP | Gratis | `FMP_API_KEY` (opcional) |
 
-**Sin keys opcionales**: sistema funciona al 100% (RRG, CMF, RORO, cotizaciones, noticias).
+**Sin keys opcionales**: sistema funciona al 100% (RRG, CMF, RORO, cotizaciones).
 - Sin FRED → macro indicadores en "n/d"
 - Sin Quandl → COT en demo
+- Sin OpenBB → noticias en demo
 
 ---
 
-## Interactividad
+## ⚙️ Configuración
 
-### RRG (Relative Rotation Graph)
-- **Hover sobre cuadrante**: resalta todos los sectores del cuadrante
-- **Hover sobre línea/punto**: resalta un sector individual
-- **Click en nombre de cuadrante**: fija todos los sectores (resto desaparece)
-- **Click en línea/punto**: fija un sector solo
-- **Click en background**: deselecciona
+### Variables de entorno (.env)
+```bash
+# Todas opcionales. Sin ellas, funciona 100% con yfinance.
+FRED_API_KEY=tu_fred_key
+QUANDL_API_KEY=tu_quandl_key
+FMP_API_KEY=tu_fmp_key
+```
 
-### Heatmap
-- **Navega**: click en tiles sin flechas (▸) para expandir
-- **Glow dinámico**: verde (alcista) / rojo (bajista)
-- **Hover**: levanta y resalta
-- **Métrica**: botones para cambiar entre RS, CMF
-
-### Macro KPIs
-- **Hover**: tooltip con descripción de qué indica
-- **Sparkline**: últimos 12 períodos
-- Soporta: tasas, FX, commodities, inflación, volatilidad (VIX)
-
----
-
-## Conceptos clave
-
-### Flujos inferidos vs observados
-- **Inferidos** (proxy, tiempo real): RRG, CMF, RORO → se leen como *fuerza/presión*
-- **Observados** (dinero real, con lag): flujo ETF, COT → se leen como *capital real*
-
-Nunca etiquetar RRG/CMF como "entró/salió capital". Solo flujo ETF y COT pueden.
-
-### RORO (Risk-On/Risk-Off)
-Compuesto de:
-- **SPY / Bonos USA**: acciones vs bonos (ciclo vs defensa)
-- **Cobre / Oro**: ciclo vs refugio
-- **Cíclicos / Defensivos**: XLY vs XLP
-- **Spread HY (inv)**: high-yield vs treasuries
-- **VIX (invertido)**: volatilidad inversa
-
-**Positivo (+)** = Risk-On (favorables al riesgo)  
-**Negativo (-)** = Risk-Off (defensivos)
-
----
-
-## Customización
-
-### Agregar/quitar sectores
-Editar `universe.py` → se refleja automáticamente en todo el árbol.
-
-### Cambiar símbolos macro
-Editar `MACRO_CARDS` en `config.py`:
+### config.py - Editar aquí
 ```python
+BENCH_EQUITY = "SPY"           # Benchmark para sectores
+BENCH_CROSS = "ACWI"           # Benchmark global
+RRG_WINDOW = 12                # Barras para RS-Ratio (5d default)
+RRG_TAIL = 5                   # Puntos de cola del gráfico
+TTL = {
+  "snapshot": 900,             # 15 min
+  "hist": 3600,                # 1 hora
+  "roro": 3600
+}
+
 MACRO_CARDS = [
-    {"nm": "Fed funds", "kind": "econ", "name": "federalFunds", "fred": "FEDFUNDS", "unit": "%"},
-    {"nm": "Plata/Oro", "kind": "ratio", "a": "SIUSD", "b": "GCUSD", "unit": "ratio"},
-    ...
+  {"symbol": "^GSPC", "alt": [...], "name": "S&P 500", ...},
+  ...
 ]
 ```
 
-### Cambiar benchmarks RRG
-`config.py`:
-```python
-BENCH_EQUITY = "SPY"      # Benchmark para sectores
-BENCH_CROSS = "ACWI"      # Benchmark para cross-asset
+---
+
+## 🎨 Paleta de colores (desaturada)
+
+```css
+--bg: #171821           /* fondo */
+--surface: #1f2129      /* paneles */
+--border: #363a47       /* líneas */
+--text: #dcdde3         /* texto principal */
+--muted: #8b8fa0        /* texto secundario */
+--green: #6dd26d        /* alcista, risk-on, positivo */
+--red: #ff6b6b          /* bajista, risk-off, negativo */
+--amber: #d4a25e        /* neutral, transición */
+--blue: #7a9ec8         /* líder (RRG) */
+--purple: #9885b8       /* información, detalles */
 ```
 
 ---
 
-## Troubleshooting
+## 📝 Disciplina conceptual
 
-- **Macro KPI sin gráfico**: símbolo FMP incorrecto. Probar `alt` en `config.py`.
-- **COT vacío**: revisión de `COT_SYMBOLS` y nombres de campos en `compute/cot.py`.
-- **Badge "parcial"**: ver `meta.notes` en el pie; algún endpoint premium no disponible.
-- **RRG labels superpuestos**: es normal en zoom alto; click en línea para aislar.
+**Regla de oro**: Separar capas de inferencia vs observación.
+
+| Capa | Modelos | Lectura | Afirmación válida |
+|------|---------|---------|-------------------|
+| **Inferida** (proxy) | RRG, CMF, RORO | "fuerza" / "presión" | NUNCA "entró/salió capital" |
+| **Observada** (dinero real) | Flujo ETF, COT | dinero medido | "el capital se movió" |
+
+**No se puede:**
+- Etiquetar RS como "flujo de dinero"
+- Afirmar magnitudes de dinero desde ratios de precio
+- Usar volumen como proxy de flujo neto (comprador/vendedor)
+
+**Se puede:**
+- Usar CMF (pondera cierre dentro del rango)
+- Calcular flujo implícito ETF (Δ AUM × NAV)
+- Reportar COT como dinero observado
 
 ---
 
-## Datos y caché
+## 🧪 Testing
 
-Para forzar recálculo:
 ```bash
+# Verificar que compila
+python -m py_compile *.py compute/*.py
+
+# Testear modo LIVE sin keys (yfinance es gratis)
+python -c "import app; print(app._live_snapshot()['meta']['mode'])"
+
+# Borrar caché y recargar
 rm -rf cache/*.json
 ```
 
-TTLs en `config.py`:
-- Precios (RRG, CMF): **horaria**
-- Macro, ETF flows: **diaria**
-- COT: **semanal**
+---
+
+## 📋 Copias de seguridad y actualizaciones
+
+- **Caché**: `cache/` - TTL automático, se limpia solo
+- **Datos**: todo en vivo vía APIs (sin DB local)
+- **Auto-reload**: cada 1 hora, mantiene datos frescos
 
 ---
 
-## Autor
+## 📄 Licencia
 
-© 2026 Leandro R. Bergero, Msc Finance & Banking BSM-UPF
+© 2026 Leandro R. Bergero, Msc Finance & Banking (BSM-UPF)
 
-Análisis de rotación de capital global | Datos en vivo, inferencias reales.
+---
+
+## 🤝 Contribuir
+
+Para reportar bugs o sugerir features, abre un issue en GitHub.
+
+**Código de conducta:**
+- Auditá línea por línea antes de proponer cambios
+- Respetá la arquitectura: data → compute → frontend
+- No agregues dependencias pesadas sin justificar
+- Frontend: vanilla JS + SVG (sin frameworks)
+- Backend: mantené `safe()` para degradación elegante
+
+---
+
+## 📚 Recursos
+
+- **RRG**: [Método JdK](https://www.juliusdelkemptradinginformation.com/) - Relative Rotation Graphs
+- **CMF**: Chaikin Money Flow (presión de precios)
+- **RORO**: Z-scores de ratios cíclicos/defensivos
+- **yfinance**: [GitHub](https://github.com/ranaroussi/yfinance)
+- **FRED**: [API Docs](https://fred.stlouisfed.org/docs/api/)
+- **Quandl**: [API Docs](https://docs.quandl.com/)
+
+---
+
+**Última actualización:** 2026-06-29
+**Estado:** ✅ Production-ready

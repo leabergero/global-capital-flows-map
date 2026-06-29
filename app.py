@@ -13,7 +13,7 @@ anota en meta.notes; el resto sigue en vivo. La key nunca llega al navegador.
 import logging
 from concurrent.futures import ThreadPoolExecutor
 
-from flask import Flask, jsonify, send_from_directory
+from flask import Flask, jsonify, send_from_directory, request
 
 import config
 import cache
@@ -57,16 +57,21 @@ def _agg(children, key):
     return round(num / den, 2) if den else None
 
 
-def _build_node(node, bench_bars):
+def _build_node(node, bench_bars, rrg_window=None, rrg_tail=None):
+    if rrg_window is None:
+        rrg_window = config.RRG_WINDOW
+    if rrg_tail is None:
+        rrg_tail = config.RRG_TAIL
+
     kids = node.get("children")
-    built = [_build_node(c, bench_bars) for c in kids] if kids else None
+    built = [_build_node(c, bench_bars, rrg_window, rrg_tail) for c in kids] if kids else None
 
     rs = mom = cmf_v = None
     flow_m = None                       # flujo en MILLONES de USD (unidad única)
     sym = node.get("symbol")
     if sym:
         bars = _lookup(sym)
-        pt = rrg.point(bars, bench_bars)
+        pt = rrg.point(bars, bench_bars, window=rrg_window, tail=rrg_tail)
         if pt:
             rs, mom = pt["rs"], pt["mom"]
         cmf_v = cmf.cmf(bars)
@@ -102,9 +107,15 @@ def _build_node(node, bench_bars):
 # ---------------------------------------------------------------------------
 # Snapshot en vivo, sección por sección y blindado
 # ---------------------------------------------------------------------------
-def _live_snapshot():
+def _live_snapshot(period_days=None):
     notes = []
     demo = demo_data.snapshot("demo")  # fuente de fallback por sección
+
+    # Mapear período a window/tail del RRG
+    if period_days is None:
+        period_days = 5
+    period_map = {5: (12, 5), 20: (30, 5), 50: (60, 5)}
+    rrg_window, rrg_tail = period_map.get(period_days, (12, 5))
 
     _prefetch(universe.all_symbols())
     bench_eq = _lookup(config.BENCH_EQUITY)
@@ -121,14 +132,16 @@ def _live_snapshot():
             notes.append(f"{section}: sin datos en vivo (fallback demo)")
             return fallback
 
-    tree = safe("tree", lambda: _build_node(universe.TREE, bench_eq), demo["tree"])
+    tree = safe("tree", lambda: _build_node(universe.TREE, bench_eq, rrg_window, rrg_tail), demo["tree"])
     rrg_sec = safe("rrg.sectores",
-                   lambda: rrg.dataset(universe.RRG_SECTORES, bench_eq, _lookup),
+                   lambda: rrg.dataset(universe.RRG_SECTORES, bench_eq, _lookup,
+                                      window=rrg_window, tail=rrg_tail),
                    demo["rrg"]["sectores"])
     rrg_cross = safe("rrg.cross",
-                     lambda: rrg.dataset(universe.RRG_CROSS, bench_cross, _lookup),
+                     lambda: rrg.dataset(universe.RRG_CROSS, bench_cross, _lookup,
+                                        window=rrg_window, tail=rrg_tail),
                      demo["rrg"]["cross"])
-    roro_rows, comp = safe("roro", lambda: roro.components(_lookup),
+    roro_rows, comp = safe("roro", lambda: roro.components(_lookup, window=rrg_window),
                            (demo["roro"], None))
     if comp is None:
         comp = round(sum(r[1] for r in roro_rows) / len(roro_rows), 2) if roro_rows else 0.0
@@ -174,16 +187,22 @@ def index():
 
 @app.route("/api/snapshot")
 def snapshot():
+    period = int(request.args.get("period", 5))
+    if period not in (5, 20, 50):
+        period = 5
+
     if config.DEMO_MODE:
         data = demo_data.snapshot(
             "demo", ["Modo DEMO: sin FMP_API_KEY. Datos sintéticos. "
                      "Poné tu key en .env para datos reales."])
         return jsonify(data)
-    cached = cache.get("snapshot:full")
+
+    cache_key = f"snapshot:full:{period}"
+    cached = cache.get(cache_key)
     if cached is not None:
         return jsonify(cached)
-    data = _live_snapshot()
-    cache.set("snapshot:full", data, config.TTL["snapshot"])
+    data = _live_snapshot(period_days=period)
+    cache.set(cache_key, data, config.TTL["snapshot"])
     return jsonify(data)
 
 

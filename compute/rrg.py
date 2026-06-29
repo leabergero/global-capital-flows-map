@@ -67,14 +67,14 @@ def point(asset_bars, bench_bars, window=None, tail=None):
             "path": path}
 
 
-def dataset(pairs, bench_bars, price_lookup):
+def dataset(pairs, bench_bars, price_lookup, window=None, tail=None):
     """
     pairs: lista (nombre, símbolo). price_lookup(símbolo)->bars.
     Devuelve lista de {name, rs, mom, path} (omite los que no calculan).
     """
     out = []
     for name, sym in pairs:
-        pt = point(price_lookup(sym), bench_bars)
+        pt = point(price_lookup(sym), bench_bars, window=window, tail=tail)
         if pt:
             out.append({"name": name, **pt})
     return out
