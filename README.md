@@ -1,6 +1,8 @@
-# Mapa de Flujos Globales
+# Global Capital Flows Map
 
-**Terminal cross-asset interactiva** que visualiza rotación de capital y régimen de mercado en tiempo real.
+> *Mapa de Flujos Globales* — terminal cross-asset interactiva (documentación en español).
+
+**Interactive cross-asset terminal** that visualizes capital rotation and market regime in real time.
 
 **Última actualización:** 2026-06-29
 
@@ -20,28 +22,67 @@ Un dashboard financiero que muestra:
 - **Flujo ETF** - Dinero observado (creación/redención), histórico propio vía scraper
 - **Noticias** - Headlines con sentimiento (OpenBB)
 
-**Modo**: Siempre LIVE con yfinance (gratis). Con keys opcionales → datos completos.
+**Modo**: con una `FMP_API_KEY` gratuita corre **LIVE** (datos de mercado vía yfinance,
+sin costo). Sin ella, arranca en **DEMO** (datos sintéticos). Las keys de FRED/Quandl
+son opcionales y enriquecen secciones. Ver [API Keys](#-api-keys).
 
 ---
 
-## 🚀 Arranque rápido
+## 🚀 Instalación
+
+Requiere **Python 3.10+** y git. No hay build step ni dependencias de Node.
+
+### 🐧 Linux / macOS
 
 ```bash
-# 1) Clonar y entrar
-git clone <tu-repo>
-cd flujos-globales
+# 1) Clonar
+git clone https://github.com/leabergero/global-capital-flows-map.git
+cd global-capital-flows-map
 
-# 2) Correr (automatizado)
-bash run.sh
-
-# O manual:
+# 2) Entorno virtual + dependencias
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
+
+# 3) (opcional) configurar API keys — ver sección abajo
+cp .env.example .env        # y editar con tus keys
+
+# 4) Correr
+python app.py               # o: bash run.sh
+```
+
+Abrir **http://127.0.0.1:5000**
+
+### 🪟 Windows (PowerShell)
+
+```powershell
+# 1) Clonar
+git clone https://github.com/leabergero/global-capital-flows-map.git
+cd global-capital-flows-map
+
+# 2) Entorno virtual + dependencias
+python -m venv .venv
+.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+
+# 3) (opcional) configurar API keys — ver sección abajo
+copy .env.example .env       # y editar con tus keys
+
+# 4) Correr
 python app.py
 ```
 
 Abrir **http://127.0.0.1:5000**
+
+> Si PowerShell bloquea el script de activación, ejecutá una vez:
+> `Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned`
+
+### ⏱️ Flujo ETF automático (opcional)
+
+Para acumular el histórico de flujo ETF, programá `scrape_etf_flows.py` 1×/día.
+**Linux**: anacron (ver sección [Flujo ETF](#-flujo-etf--dinero-observado-scraper-propio)).
+**Windows**: Task Scheduler → tarea diaria que ejecute
+`.venv\Scripts\python.exe scrape_etf_flows.py`.
 
 ---
 
@@ -231,9 +272,9 @@ data/etf_flows.json    Histórico de flujo acumulado localmente (no versionado)
 | Indicadores económicos | FRED | Gratis | `FRED_API_KEY` (opcional) |
 | COT (Traders) | Quandl | Gratis | `QUANDL_API_KEY` (opcional) |
 | Noticias | OpenBB | Gratis | Instalado en venv |
-| Flujo ETF | FMP | Gratis | `FMP_API_KEY` (opcional) |
+| Flujo ETF | scraper propio (yfinance) | Gratis | — (FMP `/etf/holdings` es premium) |
 
-**Sin keys opcionales**: sistema funciona al 100% (RRG, CMF, RORO, cotizaciones).
+**Con la FMP key gratuita** (modo LIVE), el núcleo funciona al 100% (RRG, CMF, RORO, cotizaciones).
 - Sin FRED → macro indicadores en "n/d"
 - Sin Quandl → COT en demo
 - Sin OpenBB → noticias en demo
@@ -297,14 +338,29 @@ Cobertura: 43/43 ETFs (con fallback `totalAssets/NAV` para los menos líquidos).
 
 ---
 
-## ⚙️ Configuración
+## 🔑 API Keys
 
-### Variables de entorno (.env)
+Todas las keys son **gratuitas**. Copiá `.env.example` a `.env` y completá las que
+quieras. La key **nunca** llega al frontend (vive solo en el backend).
+
+| Key | ¿Obligatoria? | Habilita | Obtener (gratis) |
+|-----|---------------|----------|------------------|
+| `FMP_API_KEY` | **Sí, para modo LIVE** | Activa el modo en vivo. **Sin ella el sistema corre en DEMO** (datos sintéticos). El plan gratuito alcanza: los datos de mercado vienen de yfinance, no de FMP. | [financialmodelingprep.com](https://site.financialmodelingprep.com/developer/docs) |
+| `FRED_API_KEY` | Opcional | Indicadores económicos en vivo (tasas Fed/BCE/BoJ, IPC). Sin ella → "n/d". | [fredaccount.stlouisfed.org/apikeys](https://fredaccount.stlouisfed.org/apikeys) |
+| `QUANDL_API_KEY` | Opcional | COT (posición de futuros del CFTC). Sin ella → COT demo. | [data.nasdaq.com/sign-up](https://data.nasdaq.com/sign-up) |
+| OpenBB | Opcional (paquete) | Noticias con sentimiento. Sin él → noticias demo. | `pip install openbb` |
+
+> **El gotcha importante:** la `FMP_API_KEY` del plan **gratuito** es lo único que
+> hace falta para el modo LIVE — *no* porque FMP provea los datos (los da yfinance,
+> gratis), sino porque su ausencia activa el modo DEMO. El endpoint premium de FMP
+> (`/etf/holdings`, para flujo ETF) **no** es necesario: ese flujo se construye
+> localmente con el scraper.
+
+### Ejemplo de `.env`
 ```bash
-# Todas opcionales. Sin ellas, funciona 100% con yfinance.
-FRED_API_KEY=tu_fred_key
-QUANDL_API_KEY=tu_quandl_key
-FMP_API_KEY=tu_fmp_key
+FMP_API_KEY=tu_key_gratuita_de_fmp     # requerida para LIVE
+FRED_API_KEY=                          # opcional
+QUANDL_API_KEY=                        # opcional
 ```
 
 ### config.py - Editar aquí
