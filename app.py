@@ -20,6 +20,7 @@ import cache
 import universe
 import demo_data
 import fmp_client as fmp
+import etf_flow_tracker as etf_tracker
 from compute import rrg, cmf, flows, roro, cot, macro, news
 
 logging.basicConfig(level=logging.INFO,
@@ -57,14 +58,14 @@ def _agg(children, key):
     return round(num / den, 2) if den else None
 
 
-def _build_node(node, bench_bars, rrg_window=None, rrg_tail=None):
+def _build_node(node, bench_bars, rrg_window=None, rrg_tail=None, flow_days=5):
     if rrg_window is None:
         rrg_window = config.RRG_WINDOW
     if rrg_tail is None:
         rrg_tail = config.RRG_TAIL
 
     kids = node.get("children")
-    built = [_build_node(c, bench_bars, rrg_window, rrg_tail) for c in kids] if kids else None
+    built = [_build_node(c, bench_bars, rrg_window, rrg_tail, flow_days) for c in kids] if kids else None
 
     rs = mom = cmf_v = None
     flow_m = None                       # flujo en MILLONES de USD (unidad única)
@@ -76,7 +77,10 @@ def _build_node(node, bench_bars, rrg_window=None, rrg_tail=None):
             rs, mom = pt["rs"], pt["mom"]
         cmf_v = cmf.cmf(bars)
         if node.get("etf"):
-            raw = flows.implied_flow(sym, bars)   # USD crudo
+            raw = flows.implied_flow(sym, bars)   # USD crudo (FMP, premium)
+            if raw is None:
+                # Fallback gratuito: histórico acumulado por scrape_etf_flows.py
+                raw = etf_tracker.flow_window(sym, flow_days)
             if raw is not None:
                 flow_m = round(raw / 1e6, 1)      # -> millones (una sola vez)
 
@@ -132,7 +136,7 @@ def _live_snapshot(period_days=None):
             notes.append(f"{section}: sin datos en vivo (fallback demo)")
             return fallback
 
-    tree = safe("tree", lambda: _build_node(universe.TREE, bench_eq, rrg_window, rrg_tail), demo["tree"])
+    tree = safe("tree", lambda: _build_node(universe.TREE, bench_eq, rrg_window, rrg_tail, period_days), demo["tree"])
     rrg_sec = safe("rrg.sectores",
                    lambda: rrg.dataset(universe.RRG_SECTORES, bench_eq, _lookup,
                                       window=rrg_window, tail=rrg_tail),
@@ -158,7 +162,8 @@ def _live_snapshot(period_days=None):
     return {
         "meta": {"mode": mode,
                  "generated": datetime.utcnow().isoformat(timespec="seconds") + "Z",
-                 "notes": notes},
+                 "notes": notes,
+                 "etf_flow_depth": etf_tracker.history_depth()},
         "regime": regime,
         "rrg": {"sectores": rrg_sec, "cross": rrg_cross},
         "roro": roro_rows,

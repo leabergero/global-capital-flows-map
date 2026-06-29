@@ -15,8 +15,9 @@ Un dashboard financiero que muestra:
 - **Régimen RORO** - Risk-On/Risk-Off con z-scores de 5 ratios cíclicos/defensivos
 - **COT (Commitment of Traders)** - Posicionamiento de especuladores (semanal)
 - **KPIs Macro** - 17 indicadores: tasas, FX, commodities, inflación, volatilidad, cripto
-- **SPY/TLT Gauge** - Indicador de ciclo vs defensa (Equity vs Bonos)
+- **SPY/10Y UST Gauge** - Indicador de ciclo vs defensa (Equity vs Bonos)
 - **Gold/Silver Ratio** - Calculado desde Oro y Plata
+- **Flujo ETF** - Dinero observado (creación/redención), histórico propio vía scraper
 - **Noticias** - Headlines con sentimiento (OpenBB)
 
 **Modo**: Siempre LIVE con yfinance (gratis). Con keys opcionales → datos completos.
@@ -52,10 +53,11 @@ Abrir **http://127.0.0.1:5000**
 - **50d** (50 barras, confirmación) - Largo plazo
 
 **Interactividad:**
-- Hover en cuadrante → resalta todos los sectores
-- Hover en línea → resalta un sector
-- Click en cuadrante → fija todos (resto desaparece)
-- Click en línea → fija un sector solo
+- Click en el título de un cuadrante (LÍDER, REZAGADO…) → muestra solo ese cuadrante
+- Click en el nombre de un sector → aísla ese sector
+- Click en el fondo → limpia la selección
+- Leyenda de tiempo centrada arriba (1 lectura = 1 día / 1 semana / 10 días según ventana)
+- Flecha en el nodo actual indicando dirección de rotación; nombres pegados a cada línea
 
 Cuadrantes:
 - **Verde (Líder)**: X≥100, Y≥100 - Fuerza y momentum positivo
@@ -70,7 +72,8 @@ Cuadrantes:
 - **Glow dinámico** en hover
 - 3 métricas disponibles: RS (fuerza relativa), CMF (presión), Flujo (solo ETF)
 
-### 3. Régimen RORO
+### 3. Régimen de mercado (RORO)
+- En la UI se titula **"Régimen de mercado"**, con tooltip explicativo al pasar el mouse
 - **Z-score compuesto** de 5 ratios:
   - SPY / Bonos USA
   - Cobre / Oro
@@ -83,13 +86,17 @@ Cuadrantes:
 - **NEUTRAL** (-0.75 < z < +0.75) - Transición
 - **BEARISH** (z ≤ -0.75) - Risk-Off, miedo, defensa predomina
 
-### 4. SPY/TLT Gauge
+### 4. SPY/10Y UST Gauge
 - Barra vertical que sube/baja desde eje central
 - **Arriba (verde)**: SPY MERCADOS - Equity supera Bonos
-- **Abajo (roja)**: BONOS DEFENSA - Bonos supera Equity
+- **Abajo (roja)**: BONOS DEFENSA - Bonos (10Y UST) supera Equity
 - **Escala dinámica** (5%, 25%, 50%, 100%) - Se ajusta automáticamente
 - **Glow latente** en la barra activa
+- **Tooltip** explicativo al pasar el mouse
 - Muestra diferencia % en KPI
+
+> Nomenclatura: usamos **10Y UST** (US Treasury 10-Year, estándar de la industria)
+> en lugar del ticker del ETF (TLT) para el nodo de bonos largos.
 
 ### 5. Gold/Silver Ratio
 - Calculado en vivo: Oro RS / Plata RS
@@ -140,8 +147,11 @@ compute/
   └─ news.py           Headlines con sentimiento (OpenBB, fallback FMP)
 
 demo_data.py           Snapshot sintético (fallback por sección)
+etf_flow_tracker.py    Histórico propio de flujo ETF (shares × NAV, acumulativo)
+scrape_etf_flows.py    Script diario (anacron) que alimenta el histórico de flujo
 static/index.html      Frontend vanilla JS + SVG (sin build, sin frameworks)
 static/favicon.ico     Icono personalizado
+data/etf_flows.json    Histórico de flujo acumulado localmente (no versionado)
 ```
 
 ---
@@ -153,7 +163,8 @@ static/favicon.ico     Icono personalizado
   "meta": {
     "mode": "live|parcial|demo",
     "generated": "ISO-8601",
-    "notes": ["secciones en fallback si las hay"]
+    "notes": ["secciones en fallback si las hay"],
+    "etf_flow_depth": 1          // días de histórico de flujo ETF acumulados
   },
   
   "regime": {
@@ -226,6 +237,63 @@ static/favicon.ico     Icono personalizado
 - Sin FRED → macro indicadores en "n/d"
 - Sin Quandl → COT en demo
 - Sin OpenBB → noticias en demo
+
+---
+
+## 💰 Flujo ETF — dinero observado (scraper propio)
+
+El flujo de un ETF es la **única capa de dinero observado** (no inferido): mide la
+creación/redención real de unidades.
+
+```
+flujo_t  ≈  (shares_outstanding_t − shares_outstanding_{t-1})  ×  NAV_t
+```
+
+**El problema**: ninguna fuente gratuita da el *histórico* de shares/AUM de un ETF.
+- yfinance da el snapshot **actual** (`sharesOutstanding`, `totalAssets`) — gratis
+- `get_shares_full()` viene **vacío** para ETFs
+- SSGA/iShares publican solo el holding **del día**
+- Finnhub/EODHD/FactSet tienen el histórico pero **detrás de plan pago**
+- FMP `/etf/holdings` requiere **plan pago** (devuelve 429 en el plan gratuito)
+
+**La solución**: construir el histórico **hacia adelante**. Un script diario guarda
+un snapshot (shares × NAV) y acumula en `data/etf_flows.json`. Las ventanas 5/20/50
+son la suma de los flujos diarios de los últimos N snapshots disponibles.
+
+### Uso
+
+```bash
+# captura manual de un snapshot (idempotente, 43 ETFs del universo)
+python scrape_etf_flows.py
+
+# ver histórico acumulado
+python -c "import etf_flow_tracker as t; print(t.coverage())"
+```
+
+### Automatización con anacron (recomendado)
+
+Anacron corre el snapshot **una vez al día** y, a diferencia de cron, **recupera
+corridas perdidas** si la máquina estuvo apagada.
+
+```
+~/.anacron/etc/anacrontab   →  1 5 etf-flows  cd <proj> && .venv/bin/python scrape_etf_flows.py
+crontab:
+  @reboot      anacron -t ~/.anacron/etc/anacrontab -S ~/.anacron/spool
+  0 21 * * *   anacron -t ~/.anacron/etc/anacrontab -S ~/.anacron/spool
+```
+
+### Calendario de activación
+
+El histórico se llena con el tiempo (no es retroactivo):
+
+| Días hábiles acumulados | Ventana disponible |
+|-------------------------|--------------------|
+| ~6 | Flujo **5d** |
+| ~21 | Flujo **20d** |
+| ~51 | Flujo **50d** |
+
+Mientras se llena, el heatmap muestra un aviso ámbar y RS/CMF cubren la lectura.
+Cobertura: 43/43 ETFs (con fallback `totalAssets/NAV` para los menos líquidos).
 
 ---
 

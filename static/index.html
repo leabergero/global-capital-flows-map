@@ -49,6 +49,12 @@
     border-radius:6px;padding:10px 12px;font-size:11px;color:var(--text);width:280px;z-index:100;margin-bottom:8px;
     font-family:var(--sans);font-weight:normal;line-height:1.4}
   .panel-head:hover .tooltip{display:block}
+  .regime-info:hover .tooltip{display:block}
+  #metricSeg{overflow:visible}
+  #metricSeg button{position:relative}
+  #metricSeg button:first-child{border-radius:6px 0 0 6px}
+  #metricSeg button:last-child{border-radius:0 6px 6px 0}
+  #metricSeg button:hover .tooltip{display:block}
   .panel-title{font-family:var(--mono);font-size:11px;letter-spacing:.14em;
     text-transform:uppercase;color:var(--muted);display:flex;align-items:center;gap:6px}
   .led{width:6px;height:6px;border-radius:50%;display:inline-block;flex:none}
@@ -97,7 +103,14 @@
     z-index:10;
   }
   .tile.leaf{cursor:default}
-  .tile.leaf:hover{transform:translateY(-2px);border-color:rgba(255,255,255,0.3);z-index:10}
+  .tile.leaf:hover{
+    transform:translateY(-4px) scale(1.04);
+    border:3px solid var(--glow-color);
+    box-shadow:0 0 12px var(--glow-color),0 0 24px rgba(var(--glow-rgb), 0.25),inset 0 0 8px rgba(var(--glow-rgb), 0.15);
+    background:linear-gradient(135deg, var(--glow-color) 0%, currentColor 50%, var(--glow-color) 100%);
+    filter:brightness(1.15) saturate(1.3);
+    z-index:10;
+  }
   .tile-nm{font-size:12px;font-weight:600;color:#10121a;line-height:1.15}
   .tile-meta{display:flex;align-items:baseline;justify-content:space-between;gap:6px}
   .tile-val{font-family:var(--mono);font-size:12px;font-weight:600;color:#10121a}
@@ -162,13 +175,15 @@
 
   <div class="regime">
     <span class="regime-dot" id="regimeDot"></span>
-    <div><div class="regime-label">Régimen RORO</div>
+    <div class="regime-info" style="position:relative">
+      <div class="regime-label" style="cursor:help">Régimen de mercado</div>
       <div class="regime-state" id="regimeState">—</div>
-      <div class="regime-chart">
+      <div class="regime-chart" style="position:relative">
         <div class="regime-limits regime-limit-on"></div>
         <div class="regime-limits regime-limit-off"></div>
         <div class="regime-bar" id="regimeBar" style="width:50%;left:25%">Neutral</div>
       </div>
+      <div class="tooltip" style="width:280px;font-size:10px;left:0;right:auto;bottom:auto;top:100%;margin-top:8px;margin-bottom:0">Z-score compuesto de 5 ratios cíclicos vs defensivos. Verde (positivo) = Risk-On, dinero en riesgo, ciclo favorable. Rojo (negativo) = Risk-Off, defensa predomina. Rango típico ±3. La barra muestra la posición actual entre los extremos.</div>
       <div style="display:flex;justify-content:space-between;margin-top:12px;gap:16px">
         <span id="regimeBullish" style="font-weight:700;color:var(--green);font-size:14px;letter-spacing:.08em">BULLISH</span>
         <span style="color:var(--muted);font-size:12px">NEUTRAL</span>
@@ -183,7 +198,7 @@
         <span class="panel-title">RRG · Rotación relativa</span>
         <div class="seg" id="rrgSeg" style="margin-left:auto">
           <button data-set="sectores" class="on" title="11 sectores del S&P 500: Energía, Tech, Financials, Salud, Industriales, Materiales, Cons. básico, Cons. discrec., Utilities, Inmobiliario, Comunicaciones. Benchmark: SPY (índice total).">Sectores · vs S&amp;P500</button>
-          <button data-set="cross" title="8 clases de activos globales: Equity (acciones), Bonos, Commodities, Divisas, Oro, HY (bonos alto rendimiento), TLT (bonos largo plazo). Benchmark: ACWI (índice mundial).">Cross-asset · vs ACWI</button>
+          <button data-set="cross" title="8 clases de activos globales: Equity (acciones), Bonos, Commodities, Divisas, Oro, HY (bonos alto rendimiento), 10Y UST (bonos). Benchmark: ACWI (índice mundial).">Cross-asset · vs ACWI</button>
         </div>
         <div class="seg" id="periodSeg" title="Ventana temporal de análisis RRG" style="margin-left:8px">
           <button data-period="5" class="on">5d</button>
@@ -214,7 +229,7 @@
       <div class="divider"></div>
       <div class="panel-head">
         <span class="panel-title">COT · Posición neta no-comercial</span>
-        <span class="panel-sub">semanal</span>
+        <span class="panel-sub">SEMANAL (viernes CFTC)</span>
         <div style="position:absolute;left:16px;right:16px;top:14px;display:flex;justify-content:space-between;font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:0.1em">
           <span style="color:var(--red);text-shadow:0 0 8px var(--red)">← BEARISH</span>
           <span style="color:var(--green);text-shadow:0 0 8px var(--green)">BULLISH →</span>
@@ -224,8 +239,9 @@
       <div class="bars" id="cotBars"></div>
       <div class="divider"></div>
       <div class="panel-head">
-        <span class="panel-title">SPY / TLT · Ciclo vs Defensa</span>
+        <span class="panel-title">SPY / 10Y UST · Ciclo vs Defensa</span>
         <span class="panel-sub" id="spyTltVal" style="font-weight:700;margin-left:auto">n/d</span>
+        <div class="tooltip" style="width:280px;font-size:10px">Ratio RS de Equities vs Bonos 10Y. Arriba (verde) = Equities ganan, Risk-On, ciclo favorable. Abajo (rojo) = Bonos ganan, Risk-Off, defensa predomina. Escala dinámica se ajusta automáticamente.</div>
       </div>
       <div style="display:flex;gap:12px;margin-bottom:12px">
         <div style="flex:1">
@@ -255,9 +271,9 @@
       <div class="hm-spacer"></div>
       <span class="metric-label">colorear por</span>
       <div class="seg" id="metricSeg">
-        <button data-m="rs" class="on" title="RS-Ratio (Fuerza Relativa): Compara precio vs benchmark. Verde = más fuerte, Rojo = más débil. Rango típico 94-106 (100 = neutral).">Fuerza rel. (RS)</button>
-        <button data-m="cmf" title="Chaikin Money Flow: Presión de compra/venta basada en dónde cierra el precio. Rango -0.5 a +0.5. Positivo = compra dominante, negativo = venta dominante. Indicador leading.">Presión (CMF)</button>
-        <button data-m="flow" title="Flujo implícito ETF: Cambio en AUM (Assets Under Management) multiplicado por NAV. Solo disponible para ETFs. Dinero observado que entra/sale. Otros activos muestran — (no aplica).">Flujo ETF</button>
+        <button data-m="rs" class="on" style="position:relative">Fuerza rel. (RS)<div class="tooltip" style="width:240px;font-size:10px;bottom:100%;left:0;top:auto;margin-bottom:8px">RS-Ratio (Fuerza Relativa): Compara precio vs benchmark. Verde = más fuerte, Rojo = más débil. Rango típico 94-106 (100 = neutral).</div></button>
+        <button data-m="cmf" style="position:relative">Presión (CMF)<div class="tooltip" style="width:240px;font-size:10px;bottom:100%;left:0;top:auto;margin-bottom:8px">Chaikin Money Flow: Presión de compra/venta. Rango -0.5 a +0.5. Positivo = compra, negativo = venta. Indicador leading.</div></button>
+        <button data-m="flow" style="position:relative">Flujo ETF<div class="tooltip" style="width:240px;font-size:10px;bottom:100%;left:0;top:auto;margin-bottom:8px">Flujo implícito ETF: Cambio en AUM × NAV. Solo para ETFs. Dinero observado que entra/sale. Acciones/Cripto/FX = no aplica.</div></button>
       </div>
     </div>
     <div class="heatmap" id="heatmap"></div>
@@ -305,7 +321,7 @@ const DEMO={
    cross:[['Equity',101.2,100.8],['Bonos',98.1,98.7],['Commodities',103.1,101.4],
     ['Cripto',104.9,103.2],['Divisas',99.2,99.5],['Oro',105.9,102.9],
     ['HY',100.7,100.2],['TLT',95.8,97.2]].map(mkRRG)},
-  roro:[['SPY / TLT',0.9],['Cobre / Oro',-0.4],['Cíclicos / Defens.',0.6],
+  roro:[['SPY / 10Y UST',0.9],['Cobre / Oro',-0.4],['Cíclicos / Defens.',0.6],
     ['Spread HY (inv)',0.3],['VIX (inv)',0.5]],
   cot:[['S&P fut · ES',126,18],['Crudo · CL',284,12],['Oro · GC',198,24],
     ['10Y · ZN',-142,-31],['Dólar · DX',41,-9],['BTC · BTC',6.4,1.1]],
@@ -336,7 +352,7 @@ const DEMO={
       dm('Materiales',102.2,101.0,0.24,180,4,[
         dm('FCX',103.9,101.8,0.36,null,1),dm('NEM',103.1,101.4,0.30,null,0.8)])]),
     dm('Bonos',98.1,98.7,-0.16,-980,24,[
-      dm('Corto · SHY',99.6,99.6,0.05,210,4),dm('Largo · TLT',95.8,97.2,-0.42,-560,5),
+      dm('Corto · SHY',99.6,99.6,0.05,210,4),dm('Largo · 10Y UST',95.8,97.2,-0.42,-560,5),
       dm('HY · HYG',100.7,100.2,0.14,310,3),dm('EM · EMB',101.3,100.5,0.18,180,2)]),
     dm('Commodities',103.1,101.4,0.30,690,16,[
       dm('Metales prec.',105.4,102.6,0.47,360,5,[
@@ -451,6 +467,17 @@ function renderHeatmap(){
     elHeat.appendChild(tile);
   });
 
+  // Aviso si se seleccionó Flujo ETF pero ningún nodo tiene dato
+  const hasFlowData=kids.some(k=>k.flow!=null);
+  if(metric==='flow' && !hasFlowData){
+    const depth=(STATE.meta&&STATE.meta.etf_flow_depth)||0;
+    const msg=depth<2
+      ? `⚠️ <strong>Flujo ETF acumulando:</strong> FMP <code>/etf/holdings</code> requiere plan pago, así que el flujo se construye localmente con <code>scrape_etf_flows.py</code> (1 snapshot/día). Llevás <strong>${depth} día</strong> — la ventana de 5d aparece al 6º día. Mientras tanto, usá RS y CMF.`
+      : `⚠️ <strong>Flujo ETF (local):</strong> ${depth} días acumulados. Esta ventana necesita más histórico; probá una ventana menor o seguí corriendo el scraper diario.`;
+    elScale.innerHTML=`<span style="color:var(--amber);font-family:var(--sans);font-size:11px;line-height:1.4">${msg}</span>`;
+    return;
+  }
+
   const lo=metric==='rs'?'94':metric==='cmf'?'-0.5':'salida';
   const hi=metric==='rs'?'106':metric==='cmf'?'+0.5':'entrada';
   elScale.innerHTML=`<span>${lo}</span><span class="hm-gradient" style="background:linear-gradient(90deg,${C.red},${C.surface2},${C.green})"></span><span>${hi}</span><span style="margin-left:10px">· ${METRIC_SUB[metric]} · tamaño = peso</span>`;
@@ -487,79 +514,209 @@ async function initRRGPixi(){
 }
 function renderRRG(setKey){
   const data=(STATE.rrg&&STATE.rrg[setKey])||[];
-  const W=560,H=420,pad=44,xmin=94,xmax=108,ymin=96,ymax=105;
+  const W=560, H=420, pad=44, xmin=94, xmax=108, ymin=96, ymax=105;
   const sx=v=>pad+(v-xmin)/(xmax-xmin)*(W-pad*1.5);
   const sy=v=>H-pad-(v-ymin)/(ymax-ymin)*(H-pad*1.6);
-  const cx=sx(100),cy=sy(100);
+  const cx=sx(100), cy=sy(100);
 
+  // Fondo
   let s=`<rect x="0" y="0" width="${W}" height="${H}" fill="${C.surface}"/>`;
+
+  // Cuadrantes de fondo
   s+=`<rect x="${cx}" y="0" width="${W-cx}" height="${cy}" fill="${C.green}" opacity="0.05"/>`;
   s+=`<rect x="${cx}" y="${cy}" width="${W-cx}" height="${H-cy}" fill="${C.amber}" opacity="0.05"/>`;
   s+=`<rect x="0" y="${cy}" width="${cx}" height="${H-cy}" fill="${C.red}" opacity="0.05"/>`;
   s+=`<rect x="0" y="0" width="${cx}" height="${cy}" fill="${C.blue}" opacity="0.05"/>`;
-  s+=`<line x1="${cx}" y1="8" x2="${cx}" y2="${H-pad}" stroke="${C.border}" stroke-dasharray="3 3"/>`;
-  s+=`<line x1="${pad}" y1="${cy}" x2="${W-12}" y2="${cy}" stroke="${C.border}" stroke-dasharray="3 3"/>`;
 
-  const lab=(x,y,t,c,isQuad)=>`<text x="${x}" y="${y}" fill="${c}" font-size="10" font-family="monospace" opacity="0.8" ${isQuad?'class="rrg-quad-label" data-quad="'+t+'"':''} style="${isQuad?'cursor:pointer':''}">${t}</text>`;
-  s+=lab(W-86,18,'LÍDER',C.green,true)+lab(W-128,H-12,'DEBILITÁNDOSE',C.amber,true)+lab(pad,H-12,'REZAGADO',C.red,true)+lab(pad,18,'MEJORANDO',C.blue,true);
+  // Ejes
+  s+=`<line x1="${cx}" y1="8" x2="${cx}" y2="${H-pad}" stroke="${C.border}" stroke-dasharray="3 3" stroke-width="0.8"/>`;
+  s+=`<line x1="${pad}" y1="${cy}" x2="${W-12}" y2="${cy}" stroke="${C.border}" stroke-dasharray="3 3" stroke-width="0.8"/>`;
+
+  // Leyenda de tiempo (centrada arriba)
+  const timeUnit={5:'1 lectura = 1 día', 20:'1 lectura = 1 semana', 50:'1 lectura = 10 días'}[rrgPeriod]||'';
+  s+=`<text x="${W/2}" y="20" fill="${C.muted}" font-size="9" text-anchor="middle" font-family="monospace" opacity="0.7">▲ ${timeUnit}</text>`;
+
+  // Etiquetas de cuadrantes (clickeables)
+  s+=`<text x="${W-86}" y="50" fill="${C.green}" font-size="10" font-family="monospace" opacity="0.8" class="rrg-quad-label" data-quad="LÍDER" style="cursor:pointer">LÍDER</text>`;
+  s+=`<text x="${W-128}" y="${H-12}" fill="${C.amber}" font-size="10" font-family="monospace" opacity="0.8" class="rrg-quad-label" data-quad="DEBILITÁNDOSE" style="cursor:pointer">DEBILITÁNDOSE</text>`;
+  s+=`<text x="${pad}" y="${H-12}" fill="${C.red}" font-size="10" font-family="monospace" opacity="0.8" class="rrg-quad-label" data-quad="REZAGADO" style="cursor:pointer">REZAGADO</text>`;
+  s+=`<text x="${pad}" y="50" fill="${C.blue}" font-size="10" font-family="monospace" opacity="0.8" class="rrg-quad-label" data-quad="MEJORANDO" style="cursor:pointer">MEJORANDO</text>`;
+
+  // Ejes labels
   s+=`<text x="${W/2}" y="${H-6}" fill="${C.muted}" font-size="10" text-anchor="middle" font-family="monospace">RS-Ratio →</text>`;
   s+=`<text x="12" y="${H/2}" fill="${C.muted}" font-size="10" text-anchor="middle" font-family="monospace" transform="rotate(-90 12 ${H/2})">RS-Momentum →</text>`;
 
-  const textRects=[];
-  const labelOffsets=[[20,-12],[20,12],[-80,-12],[-80,12],[0,-20],[0,20],[-40,-20],[-40,20],[40,-20],[40,20]];
-
+  // Renderizar cada sector
   data.forEach(d=>{
     const col=quadColor(d.rs,d.mom);
-    const px=sx(d.rs),py=sy(d.mom);
+    const px=sx(d.rs), py=sy(d.mom);
 
-    // Trayectoria: línea muy delgada
-    let pathData='';
-    (d.path||[]).forEach((p,i)=>{
-      pathData+=(i?'L':'M')+sx(p[0]).toFixed(1)+' '+sy(p[1]).toFixed(1)+' ';
-    });
-    pathData+=`L${px.toFixed(1)} ${py.toFixed(1)}`;
-    s+=`<path d="${pathData}" fill="none" stroke="${col}" stroke-width="0.7" opacity="0.8" stroke-linecap="round" data-sector="${d.name}"/>`;
-
-    // Puntos históricos
-    (d.path||[]).forEach(p=>{
-      s+=`<circle cx="${sx(p[0])}" cy="${sy(p[1])}" r="1.3" fill="${col}" opacity="0.6" data-sector="${d.name}"/>`;
-    });
-
-    // Punto actual: más pequeño (mitad)
-    s+=`<circle cx="${px}" cy="${py}" r="3.5" fill="${col}" stroke="${C.bg}" stroke-width="1.2" opacity="1" data-sector="${d.name}"/>`;
-
-    // Label con detección de colisión inteligente
-    let bestOffset=[20,-12];
-    for(let off of labelOffsets){
-      const testX=px+off[0],testY=py+off[1];
-      let collision=false;
-      for(let rect of textRects){
-        if(!(testX+50<rect.x||testX-50>rect.x+rect.w||testY+6<rect.y||testY-6>rect.y+rect.h)){
-          collision=true;
-          break;
-        }
-      }
-      if(!collision){bestOffset=off;break;}
-    }
-
-    const labelX=px+bestOffset[0],labelY=py+bestOffset[1];
-    s+=`<text x="${labelX}" y="${labelY}" fill="${C.text}" font-size="11" font-family="monospace" font-weight="600" letter-spacing="0.3">${d.name}</text>`;
-    textRects.push({x:labelX-50,y:labelY-10,w:100,h:18});
-  });
-
-  const timeline=['5d','4d','3d','2d','hoy'];
-  data.slice(0,1).forEach(d=>{
-    if(d.path&&d.path.length===5){
+    // Trayectoria (línea) CON data-sector
+    if(d.path && d.path.length>0){
+      let pathData='';
       d.path.forEach((p,i)=>{
-        s+=`<text x="${sx(p[0])}" y="${sy(p[1])-12}" fill="${C.muted}" font-size="8" text-anchor="middle" font-family="monospace" opacity="0.7" font-weight="500">${timeline[i]}</text>`;
+        pathData+=(i?'L':'M')+sx(p[0]).toFixed(1)+' '+sy(p[1]).toFixed(1)+' ';
+      });
+      pathData+=`L${px.toFixed(1)} ${py.toFixed(1)}`;
+      s+=`<path d="${pathData}" fill="none" stroke="${col}" stroke-width="0.6" opacity="0.8" stroke-linecap="round" data-sector="${d.name}"/>`;
+
+      // Puntos históricos (sin labels) CON data-sector
+      d.path.forEach(p=>{
+        s+=`<circle cx="${sx(p[0])}" cy="${sy(p[1])}" r="0.3" fill="${col}" opacity="0.6" data-sector="${d.name}"/>`;
       });
     }
+
+    // Punto actual CON data-sector (agrandado 50%)
+    s+=`<circle cx="${px}" cy="${py}" r="1.8" fill="${col}" stroke="${C.bg}" stroke-width="0.6" opacity="1" data-sector="${d.name}"/>`;
+
+    // Flecha apuntando en dirección de movimiento (si hay trayectoria)
+    if(d.path && d.path.length>=2){
+      const prev=d.path[d.path.length-1];
+      const dx=px-sx(prev[0]);
+      const dy=py-sy(prev[1]);
+      const angle=Math.atan2(dy,dx)*180/Math.PI;
+      const arrowLen=2.5;
+      const arrowX=px+Math.cos(angle*Math.PI/180)*arrowLen;
+      const arrowY=py+Math.sin(angle*Math.PI/180)*arrowLen;
+      s+=`<polygon points="${arrowX},${arrowY} ${arrowX-0.8},${arrowY-0.6} ${arrowX-0.8},${arrowY+0.6}" fill="${col}" opacity="0.9" data-sector="${d.name}"/>`;
+    }
+
+    // Nombre del sector pegado a la línea (clickeable)
+    // Determinar nombre del cuadrante basado en rs/mom
+    let quadName='';
+    if(d.rs>=100 && d.mom>=100) quadName='LÍDER';
+    else if(d.rs>=100 && d.mom<100) quadName='DEBILITÁNDOSE';
+    else if(d.rs<100 && d.mom<100) quadName='REZAGADO';
+    else if(d.rs<100 && d.mom>=100) quadName='MEJORANDO';
+
+    s+=`<text x="${px+6}" y="${py-4}" fill="${col}" font-size="9" font-family="monospace" font-weight="600" opacity="0.9" class="rrg-sector-label" data-sector="${d.name}" data-quad="${quadName}" style="cursor:pointer">${d.name}</text>`;
   });
 
   elRRG.innerHTML=s;
 
-  // Habilitar interactividad por cuadrante
-  setTimeout(()=>enableRRGInteractive(W,H,pad,xmin,xmax,ymin,ymax),50);
+  // Setup interactividad
+  setTimeout(()=>setupRRGClick(data),50);
+}
+
+function setupRRGClick(data){
+  const svg=document.getElementById('rrg');
+  if(!svg) return;
+
+  let selectedMode=null;
+  let selectedValue=null;
+
+  const getQuadColor=(quad)=>{
+    if(quad==='LÍDER') return C.green;
+    if(quad==='DEBILITÁNDOSE') return C.amber;
+    if(quad==='REZAGADO') return C.red;
+    if(quad==='MEJORANDO') return C.blue;
+    return null;
+  };
+
+  const getSectorQuad=(sectorName)=>{
+    const sector=data.find(d=>d.name===sectorName);
+    if(!sector) return null;
+    return quadColor(sector.rs, sector.mom);
+  };
+
+  const updateDisplay=()=>{
+    // Reset todo
+    svg.querySelectorAll('[data-sector]').forEach(el=>{
+      el.style.display='block';
+      el.style.opacity='1';
+      el.style.fontWeight='600';
+      el.style.textDecoration='none';
+    });
+
+    if(!selectedMode){
+      // Sin selección: mostrar todo
+      return;
+    }
+
+    if(selectedMode==='quad'){
+      // Filtrar por cuadrante: mostrar SOLO ese cuadrante
+      const sectorsInQuad=[];
+
+      // Encontrar todos los sectores del cuadrante seleccionado
+      svg.querySelectorAll('.rrg-sector-label').forEach(label=>{
+        const dataQuad=label.getAttribute('data-quad');
+        const sector=label.getAttribute('data-sector');
+
+        // Comparar nombres directamente
+        if(dataQuad===selectedValue){
+          sectorsInQuad.push(sector);
+        }
+      });
+
+      // Mostrar SOLO los elementos del cuadrante seleccionado
+      svg.querySelectorAll('[data-sector]').forEach(el=>{
+        const sector=el.getAttribute('data-sector');
+        if(!sectorsInQuad.includes(sector)){
+          el.style.display='none';
+        }
+      });
+
+    }else if(selectedMode==='sector'){
+      // Filtrar por sector: mostrar SOLO ese sector y su label
+      svg.querySelectorAll('[data-sector]').forEach(el=>{
+        const sector=el.getAttribute('data-sector');
+        if(sector!==selectedValue){
+          el.style.display='none';
+        }else if(el.classList.contains('rrg-sector-label')){
+          // Resaltar la label del sector seleccionado
+          el.style.fontWeight='700';
+          el.style.textDecoration='underline';
+        }
+      });
+    }
+  };
+
+  // Click en etiquetas de sectores
+  svg.querySelectorAll('.rrg-sector-label').forEach(label=>{
+    label.addEventListener('click',(e)=>{
+      e.stopPropagation();
+      const sector=label.getAttribute('data-sector');
+      if(selectedMode==='sector' && selectedValue===sector){
+        selectedMode=null;
+        selectedValue=null;
+      }else{
+        selectedMode='sector';
+        selectedValue=sector;
+      }
+      updateDisplay();
+    });
+  });
+
+  // Click en etiquetas de cuadrantes
+  svg.querySelectorAll('.rrg-quad-label').forEach(quad=>{
+    quad.addEventListener('click',(e)=>{
+      e.stopPropagation();
+      const quadName=quad.getAttribute('data-quad');
+      if(selectedMode==='quad' && selectedValue===quadName){
+        selectedMode=null;
+        selectedValue=null;
+      }else{
+        selectedMode='quad';
+        selectedValue=quadName;
+      }
+      updateDisplay();
+    });
+  });
+
+  // Click en fondo para limpiar
+  svg.addEventListener('click',()=>{
+    selectedMode=null;
+    selectedValue=null;
+    updateDisplay();
+  });
+}
+
+function isColorEqual(rgbStr, hexColor){
+  const hex=hexColor.replace('#','');
+  const r=parseInt(hex.substr(0,2),16);
+  const g=parseInt(hex.substr(2,2),16);
+  const b=parseInt(hex.substr(4,2),16);
+  return rgbStr.includes(`${r}`) && rgbStr.includes(`${g}`) && rgbStr.includes(`${b}`);
 }
 
 function enableRRGInteractive(W,H,pad,xmin,xmax,ymin,ymax){
@@ -722,7 +879,7 @@ function updateLEDs(){
     {find:'Rotación',state:(isRecent?'live':isStale?'stale':'demo'),tip:'Gráfico de rotación relativa (RRG). Eje X: RS-Ratio (fuerza relativa vs benchmark). Eje Y: RS-Momentum (velocidad del cambio). Pasa mouse sobre los cuadrantes para aislar: ✓ Líder (sube momentum), Debilitándose (baja momentum), Rezagado (débil), Mejorando (recuperándose). La cola muestra las últimas 5 lecturas de trayectoria.'},
     {find:'RORO',state:(isRecent?'live':isStale?'stale':'demo'),tip:'Régimen de riesgo (Risk-On/Risk-Off). Z-scores de ratios cíclicos vs defensivos: SPY/TLT (acciones vs bonos), Cobre/Oro (riesgo vs refugio), etc. Verde (+) = favorables al riesgo. Rojo (-) = defensivos. Rango típico ±3. Suma los componentes arriba = risk-on confirmado, abajo = risk-off.'},
     {find:'Macro',state:(!hasNote('macro')&&isRecent?'live':!hasNote('macro')&&isStale?'stale':'demo'),tip:'Indicadores económicos en tiempo real: Tasas de referencia (Fed, BCE, BoJ), inflación (CPI), divisas (EUR/USD, USD/JPY), commodities (WTI, Brent, oro), bonos (UST 10Y), DXY, BTC. Fuentes: FRED (tasas/CPI), yfinance (precios spot), Quandl (datos). Chg = cambio desde último dato. Sparkline = histórico (últimas 12 períodos).'},
-    {find:'COT',state:(!hasNote('cot')&&isRecent?'live':!hasNote('cot')&&isStale?'stale':'demo'),tip:'Posición neta de especuladores en futuros (datos semanales del CFTC). Muestra largos netos (bullish) vs cortos netos (bearish) en ES (S&P 500), CL (crudo), GC (oro), ZN (bonos 10Y), DX (dólar), BTC. Cambio = variación semana-a-semana. Extremos (>>0 o <<0) sugieren posicionamiento extremo de especuladores = posible reversión.'},
+    {find:'COT',state:'stale',tip:'Posición neta de especuladores en futuros (datos SEMANALES del CFTC, viernes). Muestra largos netos (bullish) vs cortos netos (bearish) en ES (S&P 500), CL (crudo), GC (oro), ZN (bonos 10Y), DX (dólar), BTC. Cambio = variación semana-a-semana. Extremos (>>0 o <<0) sugieren posicionamiento extremo de especuladores = posible reversión.'},
     {find:'jerárquico',state:(isRecent?'live':isStale?'stale':'demo'),tip:'Mapa jerárquico de activos. Clickea cualquier tile para expandir. Colores: Verde = RS alcista (supera benchmark), Rojo = RS bajista, Gris = neutral. Tamaño = peso en cartera. Selecciona métrica: Fuerza rel (RS), Presión (CMF), Flujo ETF (solo para fondos). Tamaño relativo muestra importancia en la rotación.'},
     {find:'Noticias',state:(!hasNote('news')&&isRecent?'live':!hasNote('news')&&isStale?'stale':'demo'),tip:'Últimas noticias de mercado con análisis de sentimiento: Verde = positivo (compras/optimismo), Rojo = negativo (ventas/pesimismo), Gris = neutro (informativo). Hora = cuándo se publicó. Fuente = OpenBB (intradía). Usa sentimiento para confirmar directionalidad de la rotación.'}
   ];
@@ -860,7 +1017,7 @@ function renderSpyTlt(){
     };
 
     const equity=findNode('Equity')||{rs:100};
-    const tlt=findNode('Largo · TLT')||{rs:100};
+    const tlt=findNode('Largo · 10Y UST')||{rs:100};
     const ratio=equity.rs/tlt.rs;
     const val=ratio.toFixed(4);
     const chg=(ratio>1?'+':'')+((ratio-1)*100).toFixed(1)+'%';
@@ -873,7 +1030,7 @@ function renderSpyTlt(){
     const spark=document.getElementById('spyTltSpark');
     if(spark){
       const equity=findNode('Equity')||{rs:100};
-      const tlt=findNode('Largo · TLT')||{rs:100};
+      const tlt=findNode('Largo · 10Y UST')||{rs:100};
       const eqRS=equity.rs||100;
       const tltRS=tlt.rs||100;
 

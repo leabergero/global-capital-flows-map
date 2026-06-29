@@ -36,7 +36,14 @@ python -c "import app; print(app._live_snapshot()['meta']['mode'])"
 
 # forzar recálculo (borrar caché)
 rm -rf cache/*.json
+
+# capturar snapshot de flujo ETF (acumulativo, idempotente)
+python scrape_etf_flows.py
 ```
+
+> **Reiniciar el server**: usá `fuser -k 5000/tcp` para liberar el puerto, NO
+> `pkill -f "python app.py"` — ese patrón coincide con el propio comando del shell
+> y se auto-mata (exit 144).
 
 **Modo**: Siempre **LIVE** con yfinance (gratis, sin API key).
 - Con `FRED_API_KEY` → indicadores económicos en vivo
@@ -48,18 +55,43 @@ rm -rf cache/*.json
 ## Estado actual (2026-06-29)
 
 ✅ **Completado**:
-- RRG interactivo con 3 períodos (5d, 20d, 50d) + enlazados
-- Heatmap con glow dinámico (rojo/verde) + períodos
-- RORO régimen con BULLISH/BEARISH y glow latente
-- SPY/TLT gauge: barra vertical, escala dinámica, glow latente
-- Gold/Silver ratio calculado desde Oro y Plata
-- 17 KPIs macro con tooltips visuales, organizados por categoría
-- Frontend vanilla JS + SVG (sin build)
-- Datos: yfinance + FRED + Quandl + OpenBB
-- Copyright: Leandro R. Bergero, Msc Finance & Banking BSM-UPF
-- Auto-reload cada 1 hora
-- Badge de estado con hora de última actualización
-- Carga inteligente: 5d inmediatamente, 20d/50d en background
+- RRG interactivo: click en título de cuadrante aísla ese cuadrante; click en
+  nombre de sector lo aísla; click en fondo limpia. Leyenda de tiempo arriba
+  (1 lectura = 1 día/semana/10 días). Flecha de dirección en nodo actual.
+- Heatmap con glow dinámico (rojo/verde) en TODOS los tiles, incluidas hojas
+  (`.tile.leaf:hover` también tiene glow — Bonos/Divisas).
+- Régimen "de mercado" (RORO) con BULLISH/BEARISH, glow latente y tooltip.
+- SPY/10Y UST gauge: barra vertical, escala dinámica, glow latente, tooltip.
+- Gold/Silver ratio calculado desde Oro y Plata.
+- 17 KPIs macro con tooltips visuales, organizados por categoría.
+- Tooltips visuales (no `title` nativo) en: régimen, métricas del heatmap,
+  SPY/10Y UST. Disparados con `.regime-info:hover`, `#metricSeg button:hover`.
+  Ojo: `overflow:hidden` en contenedores recorta tooltips — `#metricSeg` lleva
+  `overflow:visible`.
+- COT marcado SEMANAL (LED stale, no live: el dato del CFTC es semanal).
+- Nomenclatura: **10Y UST** en lugar de TLT (estándar de industria).
+- Flujo ETF: histórico propio acumulado (`etf_flow_tracker.py` +
+  `scrape_etf_flows.py`), porque FMP `/etf/holdings` es premium. Fallback en
+  `_build_node`: si FMP da None, usa `etf_tracker.flow_window(sym, period)`.
+- Frontend vanilla JS + SVG (sin build). Auto-reload cada 1 hora.
+- Carga inteligente: 5d inmediatamente, 20d/50d en background.
+- Copyright: Leandro R. Bergero, Msc Finance & Banking BSM-UPF.
+
+---
+
+## Flujo ETF — scraper propio (capa de dinero observado)
+
+FMP `/etf/holdings` es premium (429 en plan gratuito). Ninguna fuente gratuita da
+el histórico de shares/AUM de un ETF, así que se construye **hacia adelante**:
+
+- `etf_flow_tracker.py`: captura shares × NAV vía yfinance, acumula en
+  `data/etf_flows.json`. `flujo_t = (shares_t − shares_{t-1}) × NAV_t`.
+  Fallback `totalAssets/NAV` para ETF menos líquidos → cobertura 43/43.
+- `scrape_etf_flows.py`: corre 1x/día. Las ventanas 5/20/50 se llenan con el
+  tiempo (día 6 → 5d, día 21 → 20d, día 51 → 50d).
+- Automatizado con **anacron** (recupera corridas si la máquina estuvo apagada):
+  `~/.anacron/etc/anacrontab` + disparadores cron `@reboot` y `0 21 * * *`.
+- `data/*.json` NO se versiona (es histórico local; ver `.gitignore`).
 
 ---
 

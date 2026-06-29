@@ -4,6 +4,16 @@
 # caché en disco
 cache/*.json
 
+# histórico de flujo ETF (se acumula localmente con scrape_etf_flows.py)
+# si querés respaldar el histórico, comentá las dos líneas siguientes
+data/*.json
+data/*.log
+
+# capturas de trabajo / imágenes de debug en la raíz (no van al repo)
+/*.png
+/*.jpeg
+/*.jpg
+
 # python
 __pycache__/
 *.pyc

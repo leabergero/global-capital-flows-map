@@ -89,7 +89,7 @@ TREE = node("Global", w=100, children=[
     node("Bonos", "AGG", True, 24, children=[
         node("Corto plazo · SHY", "SHY", True, 4),
         node("Intermedio · IEF", "IEF", True, 5),
-        node("Largo · TLT", "TLT", True, 5),
+        node("Largo · 10Y UST", "TLT", True, 5),
         node("Crédito IG · LQD", "LQD", True, 4),
         node("High Yield · HYG", "HYG", True, 3),
         node("TIPS · TIP", "TIP", True, 2),
@@ -138,7 +138,7 @@ RRG_SECTORES = [
 RRG_CROSS = [
     ("Equity", "SPY"), ("Bonos", "AGG"), ("Commodities", "DBC"),
     ("Cripto", "BTCUSD"), ("Divisas", "UUP"), ("Oro", "GLD"),
-    ("HY", "HYG"), ("TLT", "TLT"),
+    ("High Yield", "HYG"), ("10Y UST", "TLT"),
 ]
 
 
