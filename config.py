@@ -49,18 +49,32 @@ TTL = {
     "snapshot": 60 * 60,        # ensamblado completo
 }
 
-# --- mapeo de símbolos para yfinance (quote) --------------------------------
-# Algunos símbolos necesitan conversión para que yfinance los entienda
+# --- mapeo de símbolos para yfinance (quote + histórico) --------------------
+# Convención FMP -> convención yfinance. Se aplica tanto en quote() como en
+# historical(): sin esto, cripto/forex/commodities salen "possibly delisted".
 YFINANCE_SYMBOL_MAP = {
-    "EURUSD":   "EURUSD=X",    # divisas: =X suffix
-    "USDJPY":   "JPY=X",       # o directamente a pares
-    "GCUSD":    "GC=F",        # commodities: =F for futures, o usar ETF
-    "CLUSD":    "CL=F",        # WTI crudo futures
-    "WTIUSD":   "USO",         # WTI: usar ETF (más liquido)
-    "BZUSD":    "BZ=F",        # Brent crudo futures
-    "BTCUSD":   "BTC-USD",     # cripto: -USD suffix
+    # divisas: sufijo =X (par completo, no la forma corta JPY=X)
+    "EURUSD":   "EURUSD=X",
+    "USDJPY":   "USDJPY=X",
+    "GBPUSD":   "GBPUSD=X",
+    "USDCNY":   "USDCNY=X",
+    # commodities: futuros =F (o ETF cuando es más líquido)
+    "GCUSD":    "GC=F",        # oro
+    "SIUSD":    "SI=F",        # plata
+    "CLUSD":    "CL=F",        # WTI crudo
+    "BZUSD":    "BZ=F",        # Brent crudo
+    "WTIUSD":   "USO",         # WTI: ETF (más líquido)
+    # cripto: sufijo -USD (Uniswap va con el ticker desambiguado de Yahoo)
+    "BTCUSD":   "BTC-USD",
+    "ETHUSD":   "ETH-USD",
+    "SOLUSD":   "SOL-USD",
+    "UNIUSD":   "UNI7083-USD",
+    "AAVEUSD":  "AAVE-USD",
+    "USDTUSD":  "USDT-USD",
+    "USDCUSD":  "USDC-USD",
+    # índices
     "^TNX":     "^TNX",        # bonos 10Y: índice directo
-    "^DXY":     "UUP",         # índice dólar: usar UUP (USD strength ETF)
+    "^DXY":     "DX-Y.NYB",    # índice dólar real (ICE); UUP como alt en la card
     "IEF":      "IEF",         # bonos intermedios: ETF
     "GLD":      "GLD",         # oro: ETF
     "DX":       "UUP",         # dólar: UUP como proxy

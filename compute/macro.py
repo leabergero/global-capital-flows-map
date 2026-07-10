@@ -65,6 +65,29 @@ def _quote_card(card):
     return {"nm": card["nm"], "val": "n/d", "chg": "—", "dir": "flat", "s": []}
 
 
+def _price_of(sym, alts):
+    """Último precio de sym probando alternativas, o None."""
+    for s in [sym] + list(alts or []):
+        q = fmp.quote(s)
+        if q and q.get("price") is not None:
+            try:
+                return float(q["price"])
+            except (TypeError, ValueError):
+                continue
+    return None
+
+
+def _ratio_card(card):
+    """Tarjeta de cociente entre dos símbolos (ej: Plata/Oro)."""
+    pa = _price_of(card["a"], card.get("alt_a"))
+    pb = _price_of(card["b"], card.get("alt_b"))
+    if pa is None or pb is None or pb == 0:
+        return {"nm": card["nm"], "val": "n/d", "chg": "—", "dir": "flat", "s": []}
+    ratio = pa / pb
+    return {"nm": card["nm"], "val": _fmt(ratio, card.get("unit", "ratio")),
+            "chg": "—", "dir": "flat", "s": [round(ratio, 4)]}
+
+
 def _econ_series_fmp(name):
     data = fmp.economic(name)
     if not data:
@@ -111,9 +134,10 @@ def _econ_series_fred(fred_id):
 
 
 def _econ_card(card):
-    vals = _econ_series_fmp(card.get("name"))
-    if not vals and card.get("fred"):
-        vals = _econ_series_fred_direct(card["fred"])  # intenta fredapi primero (ligero)
+    # FRED primero (gratis y vivo); FMP v4/economic es endpoint legacy (403).
+    vals = _econ_series_fred_direct(card["fred"]) if card.get("fred") else None
+    if not vals:
+        vals = _econ_series_fmp(card.get("name"))
     if not vals and card.get("fred"):
         vals = _econ_series_fred(card["fred"])  # fallback a OpenBB (pesado)
     if not vals:
@@ -136,8 +160,13 @@ def cards():
     out = []
     for card in config.MACRO_CARDS:
         try:
-            out.append(_econ_card(card) if card["kind"] == "econ"
-                       else _quote_card(card))
+            kind = card["kind"]
+            if kind == "econ":
+                out.append(_econ_card(card))
+            elif kind == "ratio":
+                out.append(_ratio_card(card))
+            else:
+                out.append(_quote_card(card))
         except Exception as e:               # blindaje total por tarjeta
             log.warning("macro %s :: %s", card.get("nm"), e)
             out.append({"nm": card["nm"], "val": "n/d", "chg": "—",

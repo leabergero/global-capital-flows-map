@@ -30,8 +30,11 @@ def _get(url: str, params: dict, ttl_key: str, cache_key: str):
         log.warning("FMP red FAIL %s :: %s", url, e)
         return None
     if r.status_code != 200:
-        # logueamos sin la apikey
-        log.warning("FMP %s %s :: %s", r.status_code, url, r.text[:160])
+        # 401/402/403/404/429 = endpoint premium/legacy o límite del plan gratuito:
+        # degradación esperada (hay fallback), va a DEBUG para no inundar.
+        # El resto (5xx) sí es anómalo -> WARNING.
+        level = logging.DEBUG if r.status_code in (401, 402, 403, 404, 429) else logging.WARNING
+        log.log(level, "FMP %s %s :: %s", r.status_code, url, r.text[:160])
         return None
     try:
         data = r.json()
@@ -64,7 +67,9 @@ def historical(symbol: str, days: int = None):
         end_date = datetime.now()
         start_date = end_date - timedelta(days=days)
 
-        ticker = yfinance.Ticker(symbol)
+        # Convertir símbolo FMP -> yfinance (cripto/forex/commodities/índices)
+        yf_symbol = config.YFINANCE_SYMBOL_MAP.get(symbol, symbol)
+        ticker = yfinance.Ticker(yf_symbol)
         df = ticker.history(start=start_date, end=end_date)
 
         if df.empty:
@@ -257,7 +262,9 @@ def quandl_cot(symbol: str):
         log.warning("Quandl no instalado")
         return None
     except Exception as e:
-        log.warning("Quandl FAIL %s :: %s", symbol, e)
+        # 403 = dataset COT fuera del plan gratuito (esperado) -> DEBUG.
+        level = logging.DEBUG if "403" in str(e) else logging.WARNING
+        log.log(level, "Quandl FAIL %s :: %s", symbol, e)
         return None
 
 
@@ -268,15 +275,21 @@ def cftc_cot(symbol: str):
     if cached is not None:
         return cached
 
-    # Obtener código CFTC del símbolo
-    cftc_code = config.CFTC_SYMBOL_MAP.get(symbol)
+    # CFTC directo es opcional: requiere CFTC_SYMBOL_MAP + CFTC_API_URL en config.
+    # Si no están configurados, degradamos a None (sin ruido) y sigue el fallback.
+    cftc_map = getattr(config, "CFTC_SYMBOL_MAP", None)
+    cftc_url = getattr(config, "CFTC_API_URL", None)
+    if not cftc_map or not cftc_url:
+        return None
+
+    cftc_code = cftc_map.get(symbol)
     if not cftc_code:
         log.warning("CFTC símbolo desconocido %s", symbol)
         return None
 
     try:
         # CFTC API endpoint histórico
-        r = requests.get(config.CFTC_API_URL, timeout=config.HTTP_TIMEOUT)
+        r = requests.get(cftc_url, timeout=config.HTTP_TIMEOUT)
         if r.status_code != 200:
             log.warning("CFTC %s %s", r.status_code, symbol)
             return None

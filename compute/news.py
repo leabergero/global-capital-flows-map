@@ -51,7 +51,9 @@ def _from_openbb(limit):
                         "sent": _sentiment(title)})
         return out or None
     except Exception as e:
-        log.warning("OpenBB news :: %s", e)
+        # 402/403/429 = feed FMP fuera del plan gratuito o límite alcanzado -> DEBUG.
+        level = logging.DEBUG if any(c in str(e) for c in ("402", "403", "429")) else logging.WARNING
+        log.log(level, "OpenBB news :: %s", e)
         return None
 
 
