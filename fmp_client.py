@@ -288,66 +288,41 @@ def cftc_cot(symbol: str):
         return None
 
     try:
-        # CFTC API endpoint histórico
-        r = requests.get(cftc_url, timeout=config.HTTP_TIMEOUT)
+        # Socrata: filtra server-side por contrato exacto, más reciente primero.
+        params = {
+            "$where": f"cftc_contract_market_code='{cftc_code}'",
+            "$order": "report_date_as_yyyy_mm_dd DESC",
+            "$limit": 1,
+        }
+        r = requests.get(cftc_url, params=params, timeout=config.HTTP_TIMEOUT)
         if r.status_code != 200:
             log.warning("CFTC %s %s", r.status_code, symbol)
             return None
 
-        data = r.json()
-        # Estructura: { "success": true/false, "data": [ {...}, ... ] }
-        if not data.get("success") or not data.get("data"):
+        rows = r.json()
+        if not rows:
             log.warning("CFTC no data %s", symbol)
             return None
 
-        # Buscar el registro más reciente para este commodity
-        rows = data["data"]
-        matching = [row for row in rows if row.get("commodity_code") == cftc_code]
-        if not matching:
-            log.warning("CFTC %s no encontrado en %d registros", symbol, len(rows))
-            return None
+        latest = rows[0]
 
-        # Ordenar por fecha (descendente) y tomar el más reciente
-        matching.sort(key=lambda x: x.get("report_date_as_date", ""), reverse=True)
-        latest = matching[0]
-
-        # Convertir a formato FMP compatible
-        # CFTC: all_money_longs / all_money_shorts
-        # O: noncomm_positions_long_all / noncomm_positions_short_all
-        long_val = (
-            latest.get("noncomm_positions_long_all")
-            or latest.get("all_money_longs")
-            or latest.get("noncommercialLongTotal")
-        )
-        short_val = (
-            latest.get("noncomm_positions_short_all")
-            or latest.get("all_money_shorts")
-            or latest.get("noncommercialShortTotal")
-        )
-
+        long_val = latest.get("noncomm_positions_long_all")
+        short_val = latest.get("noncomm_positions_short_all")
         if long_val is None or short_val is None:
             log.warning("CFTC campos faltantes %s", symbol)
             return None
 
-        # Intentar obtener cambios
-        chg_long = (
-            latest.get("change_in_noncomm_long_all")
-            or latest.get("changeInNoncommercialLong")
-            or 0
-        )
-        chg_short = (
-            latest.get("change_in_noncomm_short_all")
-            or latest.get("changeInNoncommercialShort")
-            or 0
-        )
+        chg_long = latest.get("change_in_noncomm_long_all") or 0
+        chg_short = latest.get("change_in_noncomm_short_all") or 0
+        report_date = (latest.get("report_date_as_yyyy_mm_dd") or "")[:10]
 
-        # Estructura compatible con FMP
+        # Estructura compatible con FMP (valores de Socrata vienen como string)
         result = {
-            "noncommercialLongTotal": long_val,
-            "noncommercialShortTotal": short_val,
-            "changeInNoncommercialLong": chg_long,
-            "changeInNoncommercialShort": chg_short,
-            "reportDate": latest.get("report_date_as_date"),
+            "noncommercialLongTotal": int(long_val),
+            "noncommercialShortTotal": int(short_val),
+            "changeInNoncommercialLong": int(chg_long),
+            "changeInNoncommercialShort": int(chg_short),
+            "reportDate": report_date,
         }
 
         cache.set(cache_key, result, config.TTL.get("cot", 604800))  # 7 días

@@ -1,4 +1,4 @@
-# CLAUDE.md — Mapa de Flujos Globales
+# CLAUDE.md — Global Flow Matrix
 
 Guía para trabajar en este repo. **Leé esto entero antes de tocar código.**
 

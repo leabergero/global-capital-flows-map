@@ -1,6 +1,6 @@
 # Global Capital Flows Map
 
-> *Mapa de Flujos Globales* — terminal cross-asset interactiva (documentación en español).
+> *Global Flow Matrix* — terminal cross-asset interactiva (documentación en español).
 
 **Interactive cross-asset terminal** that visualizes capital rotation and market regime in real time.
 

@@ -15,7 +15,15 @@ load_dotenv()
 FMP_API_KEY = os.environ.get("FMP_API_KEY", "").strip()
 FRED_API_KEY = os.environ.get("FRED_API_KEY", "").strip()
 QUANDL_API_KEY = os.environ.get("QUANDL_API_KEY", "").strip()
+TIINGO_API_KEY = os.environ.get("TIINGO_API_KEY", "").strip()
 _PLACEHOLDER = {"", "tu_key_regenerada", "tu_fred_key", "tu_quandl_key", "REEMPLAZAR", "CHANGEME"}
+
+# OpenBB busca credenciales por el nombre EXACTO de la variable (sin prefijo
+# "OPENBB_"), case-insensitive: para Tiingo es "TIINGO_TOKEN". Hay que
+# setearla antes del primer "import openbb" del proceso (carga credenciales
+# una sola vez, a nivel de módulo).
+if TIINGO_API_KEY:
+    os.environ.setdefault("TIINGO_TOKEN", TIINGO_API_KEY)
 # Si no hay key real, el backend corre en modo DEMO (datos sintéticos, sin red).
 DEMO_MODE = FMP_API_KEY in _PLACEHOLDER
 
@@ -33,6 +41,22 @@ QUANDL_COT_MAP = {
     "ZN": "CFTC/ZN_ALL",    # 10-Year Treasury Note
     "DX": "CFTC/DX_ALL",    # Dollar Index
     "BTC": "CFTC/BTC_ALL",  # Bitcoin (si disponible)
+}
+
+# --- CFTC directo (gratis, público, sin key) --------------------------------
+# Fallback cuando Quandl/Nasdaq Data Link no responde (bloqueo Incapsula u
+# otro). Fuente: Socrata public API, dataset "Legacy Futures Only" (6dca-aqww).
+# cftc_contract_market_code identifica el contrato exacto (a diferencia de
+# cftc_commodity_code, que agrupa variantes: p. ej. Gold y Micro Gold comparten
+# "088", E-mini S&P 500 y sus sub-índices comparten "138").
+CFTC_API_URL = "https://publicreporting.cftc.gov/resource/6dca-aqww.json"
+CFTC_SYMBOL_MAP = {
+    "ES": "13874A",   # E-MINI S&P 500 - CME
+    "CL": "067411",   # CRUDE OIL, LIGHT SWEET-WTI - ICE Futures Europe
+    "GC": "088691",   # GOLD - COMMODITY EXCHANGE INC.
+    "ZN": "043602",   # UST 10Y NOTE - CBOT
+    "DX": "098662",   # USD INDEX - ICE Futures U.S.
+    "BTC": "133741",  # BITCOIN - CME
 }
 
 HTTP_TIMEOUT = 15          # segundos por request

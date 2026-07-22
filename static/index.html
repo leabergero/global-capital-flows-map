@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Flujos Globales</title>
+<title>Global Flow Matrix</title>
 <style>
   :root{
     --bg:#171821; --surface:#1f2129; --surface2:#272934; --border:#363a47;
@@ -32,8 +32,17 @@
   .mode-badge{font-family:var(--mono);font-size:10px;letter-spacing:.14em;
     border-radius:3px;padding:2px 7px;text-transform:uppercase}
   .clock{margin-left:auto;font-family:var(--mono);font-size:12px;color:var(--muted)}
+  .lang-switch{display:inline-flex;gap:4px}
+  .lang-switch button{background:transparent;border:1px solid var(--border);border-radius:4px;
+    padding:2px 6px;cursor:pointer;font-size:14px;line-height:1.3;opacity:.45;transition:opacity .15s,border-color .15s}
+  .lang-switch button.on{opacity:1;border-color:var(--blue)}
+  .lang-switch button:hover{opacity:.9}
   .regime{display:flex;align-items:center;gap:14px;background:var(--surface);
-    border:1px solid var(--border);border-radius:8px;padding:12px 16px;margin-bottom:16px}
+    border:1px solid var(--border);border-radius:8px;padding:12px 16px;margin-bottom:16px;
+    position:relative;overflow:hidden;isolation:isolate}
+  .regime::before{content:'';position:absolute;inset:0;
+    background:linear-gradient(rgba(31,33,41,0.87),rgba(31,33,41,0.87)),url('bullbear-bg.jpg') center/contain no-repeat;
+    pointer-events:none;z-index:-1}
   .regime-dot{width:11px;height:11px;border-radius:50%;flex:none;box-shadow:0 0 12px currentColor, inset 0 0 6px rgba(255,255,255,0.3)}
   .regime-label{font-family:var(--mono);font-size:11px;letter-spacing:.14em;
     text-transform:uppercase;color:var(--muted)}
@@ -146,7 +155,15 @@
   .foot{margin-top:22px;color:var(--muted);font-size:11px;line-height:1.6;
     border-top:1px solid var(--border);padding-top:14px;padding-bottom:14px;border-bottom:1px solid var(--border)}
   .foot code{font-family:var(--mono);color:var(--blue);font-size:11px}
-  .copyright{margin-top:8px;color:var(--muted);font-size:10px;text-align:center}
+  .copyright{margin-top:8px;color:var(--muted);font-size:10px;text-align:center;display:flex;flex-direction:column;gap:6px;align-items:center;justify-content:center}
+  .social{display:inline-flex;gap:10px;align-items:center}
+  .social a{color:var(--muted);display:inline-flex;transition:color .15s}
+  .social a:hover{color:var(--blue)}
+  .social svg{width:14px;height:14px;fill:currentColor;display:block}
+  #kofi{position:fixed;right:14px;bottom:14px;z-index:58;opacity:.7;transition:opacity .15s;line-height:0}
+  #kofi:hover{opacity:1}
+  #kofi img{height:32px;display:block;border:0;border-radius:6px}
+  @media(max-width:760px){#kofi{display:none}}
   .two-col{display:grid;grid-template-columns:1.4fr 1fr;gap:16px;margin-bottom:16px}
   @media(max-width:920px){.two-col{grid-template-columns:1fr}}
   button[title]{cursor:help}
@@ -154,8 +171,8 @@
   .regime-chart{width:100%;height:40px;background:var(--surface2);border-radius:6px;border:1px solid var(--border);
     position:relative;overflow:hidden;margin-top:8px;box-shadow:inset 0 0 4px rgba(0,0,0,0.3)}
   .regime-limits{position:absolute;width:2px;height:100%;opacity:0.3}
-  .regime-limit-on{left:16.67%;background:var(--green);box-shadow:0 0 4px var(--green)}
-  .regime-limit-off{right:16.67%;background:var(--red);box-shadow:0 0 4px var(--red)}
+  .regime-limit-on{right:16.67%;background:var(--green);box-shadow:0 0 4px var(--green)}
+  .regime-limit-off{left:16.67%;background:var(--red);box-shadow:0 0 4px var(--red)}
   .regime-bar{position:absolute;height:100%;display:flex;align-items:center;justify-content:center;
     font-size:11px;font-weight:600;color:#ffffff;font-family:monospace;transition:all 0.3s ease;text-shadow:0 0 4px rgba(0,0,0,0.5)}
   .regime-bar.risk-on{background:linear-gradient(90deg, #6dd26d, #6dd26d);box-shadow:0 0 12px rgba(109, 210, 109, 0.6)}
@@ -166,41 +183,46 @@
 <body>
 <div class="wrap">
   <header>
-    <span class="brand">cross-asset</span>
-    <h1>Flujos Globales</h1>
-    <span class="mode-badge" id="modeBadge">cargando…</span>
+    <span class="brand" data-i18n="brand">cross-asset</span>
+    <h1>Global Flow Matrix</h1>
+    <span class="mode-badge" id="modeBadge" data-i18n="mode_loading">cargando…</span>
     <span id="loadingStatus" style="font-family:var(--mono);font-size:10px;color:var(--muted);margin-left:12px;display:none"></span>
     <span class="clock" id="clock"></span>
+    <div class="lang-switch" id="langSwitch">
+      <button data-lang="es" title="Español" aria-label="Español">🇪🇸</button>
+      <button data-lang="en" title="English" aria-label="English">🇬🇧</button>
+      <button data-lang="de" title="Deutsch" aria-label="Deutsch">🇩🇪</button>
+    </div>
   </header>
 
   <div class="regime">
     <span class="regime-dot" id="regimeDot"></span>
     <div class="regime-info" style="position:relative">
-      <div class="regime-label" style="cursor:help">Régimen de mercado</div>
+      <div class="regime-label" style="cursor:help" data-i18n="regime_label">Régimen de mercado</div>
       <div class="regime-state" id="regimeState">—</div>
       <div class="regime-chart" style="position:relative">
         <div class="regime-limits regime-limit-on"></div>
         <div class="regime-limits regime-limit-off"></div>
-        <div class="regime-bar" id="regimeBar" style="width:50%;left:25%">Neutral</div>
+        <div class="regime-bar" id="regimeBar" style="width:50%;left:25%" data-i18n="neutral">Neutral</div>
       </div>
-      <div class="tooltip" style="width:280px;font-size:10px;left:0;right:auto;bottom:auto;top:100%;margin-top:8px;margin-bottom:0">Z-score compuesto de 5 ratios cíclicos vs defensivos. Verde (positivo) = Risk-On, dinero en riesgo, ciclo favorable. Rojo (negativo) = Risk-Off, defensa predomina. Rango típico ±3. La barra muestra la posición actual entre los extremos.</div>
+      <div class="tooltip" style="width:280px;font-size:10px;left:0;right:auto;bottom:auto;top:100%;margin-top:8px;margin-bottom:0" data-i18n="regime_tooltip">Z-score compuesto de 5 ratios cíclicos vs defensivos. Verde (positivo) = Risk-On, dinero en riesgo, ciclo favorable. Rojo (negativo) = Risk-Off, defensa predomina. Rango típico ±3. La barra muestra la posición actual entre los extremos.</div>
       <div style="display:flex;justify-content:space-between;margin-top:12px;gap:16px">
-        <span id="regimeBullish" style="font-weight:700;color:var(--green);font-size:14px;letter-spacing:.08em">BULLISH</span>
-        <span style="color:var(--muted);font-size:12px">NEUTRAL</span>
         <span id="regimeBearish" style="font-weight:700;color:var(--red);font-size:14px;letter-spacing:.08em">BEARISH</span>
+        <span style="color:var(--muted);font-size:12px" data-i18n="neutral_upper">NEUTRAL</span>
+        <span id="regimeBullish" style="font-weight:700;color:var(--green);font-size:14px;letter-spacing:.08em">BULLISH</span>
       </div></div>
-    <div class="regime-score">compuesto z &nbsp; <b id="regimeScore">—</b> &nbsp;/ ±3</div>
+    <div class="regime-score"><span data-i18n="regime_score_label">compuesto z</span> &nbsp; <b id="regimeScore">—</b> &nbsp;/ ±3</div>
   </div>
 
   <div class="grid-top">
     <div class="panel">
       <div class="panel-head">
-        <span class="panel-title">RRG · Rotación relativa</span>
+        <span class="panel-title" data-panel="rrg" data-i18n="rrg_title">RRG · Rotación relativa</span>
         <div class="seg" id="rrgSeg" style="margin-left:auto">
-          <button data-set="sectores" class="on" title="11 sectores del S&P 500: Energía, Tech, Financials, Salud, Industriales, Materiales, Cons. básico, Cons. discrec., Utilities, Inmobiliario, Comunicaciones. Benchmark: SPY (índice total).">Sectores · vs S&amp;P500</button>
-          <button data-set="cross" title="8 clases de activos globales: Equity (acciones), Bonos, Commodities, Divisas, Oro, HY (bonos alto rendimiento), 10Y UST (bonos). Benchmark: ACWI (índice mundial).">Cross-asset · vs ACWI</button>
+          <button data-set="sectores" class="on" data-i18n-title="rrg_sectores_tip" title="11 sectores del S&P 500: Energía, Tech, Financials, Salud, Industriales, Materiales, Cons. básico, Cons. discrec., Utilities, Inmobiliario, Comunicaciones. Benchmark: SPY (índice total)." data-i18n="rrg_sectores_label">Sectores · vs S&amp;P500</button>
+          <button data-set="cross" data-i18n-title="rrg_cross_tip" title="8 clases de activos globales: Equity (acciones), Bonos, Commodities, Divisas, Oro, HY (bonos alto rendimiento), 10Y UST (bonos). Benchmark: ACWI (índice mundial)." data-i18n="rrg_cross_label">Cross-asset · vs ACWI</button>
         </div>
-        <div class="seg" id="periodSeg" title="Ventana temporal de análisis RRG" style="margin-left:8px">
+        <div class="seg" id="periodSeg" data-i18n-title="rrg_period_tip" title="Ventana temporal de análisis RRG" style="margin-left:8px">
           <button data-period="5" class="on">5d</button>
           <button data-period="20">20d</button>
           <button data-period="50">50d</button>
@@ -208,29 +230,29 @@
       </div>
       <svg id="rrg" viewBox="0 0 560 420" role="img" aria-label="Relative Rotation Graph"></svg>
       <div class="rrg-legend">
-        <span><i style="background:var(--green)"></i>Líder</span>
-        <span><i style="background:var(--amber)"></i>Debilitándose</span>
-        <span><i style="background:var(--red)"></i>Rezagado</span>
-        <span><i style="background:var(--blue)"></i>Mejorando</span>
+        <span><i style="background:var(--green)"></i><span data-i18n="quad_leader">Líder</span></span>
+        <span><i style="background:var(--amber)"></i><span data-i18n="quad_weakening">Debilitándose</span></span>
+        <span><i style="background:var(--red)"></i><span data-i18n="quad_lagging">Rezagado</span></span>
+        <span><i style="background:var(--blue)"></i><span data-i18n="quad_improving">Mejorando</span></span>
         <span id="rrgTailLabel" style="color:var(--muted)">— cola = análisis a 5d (últimas 5 lecturas)</span>
       </div>
     </div>
     <div class="panel">
-      <div class="panel-head" style="position:relative">
-        <span class="panel-title">RORO · Componentes (z-score)</span>
-        <span class="panel-sub" title="Risk-On: favorables al riesgo (ciclo, crecimiento). Risk-Off: defensivos (refugio, caída)">RISK-ON ↔ RISK-OFF</span>
-        <div style="position:absolute;left:16px;right:16px;top:14px;display:flex;justify-content:space-between;font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:0.1em">
-          <span style="color:var(--green);text-shadow:0 0 8px var(--green)">← RISK-ON</span>
-          <span style="color:var(--red);text-shadow:0 0 8px var(--red)">RISK-OFF →</span>
+      <div class="panel-head" style="position:relative;margin-bottom:22px">
+        <span class="panel-title" data-panel="roro" data-i18n="roro_title">RORO · Componentes (z-score)</span>
+        <span class="panel-sub" data-i18n-title="roro_sub_tip" title="Risk-On: favorables al riesgo (ciclo, crecimiento). Risk-Off: defensivos (refugio, caída)">RISK-ON ↔ RISK-OFF</span>
+        <div style="position:absolute;left:16px;right:16px;top:26px;display:flex;justify-content:space-between;font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:0.1em">
+          <span style="color:var(--red);text-shadow:0 0 8px var(--red)">← BEARISH</span>
+          <span style="color:var(--green);text-shadow:0 0 8px var(--green)">BULLISH →</span>
         </div>
       </div>
       <div class="divider"></div>
       <div class="bars" id="roroBars"></div>
       <div class="divider"></div>
-      <div class="panel-head">
-        <span class="panel-title">COT · Posición neta no-comercial</span>
-        <span class="panel-sub">SEMANAL (viernes CFTC)</span>
-        <div style="position:absolute;left:16px;right:16px;top:14px;display:flex;justify-content:space-between;font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:0.1em">
+      <div class="panel-head" style="margin-bottom:22px">
+        <span class="panel-title" data-panel="cot" data-i18n="cot_title">COT · Posición neta no-comercial</span>
+        <span class="panel-sub" data-i18n="cot_sub">SEMANAL (viernes CFTC)</span>
+        <div style="position:absolute;left:16px;right:16px;top:26px;display:flex;justify-content:space-between;font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:0.1em">
           <span style="color:var(--red);text-shadow:0 0 8px var(--red)">← BEARISH</span>
           <span style="color:var(--green);text-shadow:0 0 8px var(--green)">BULLISH →</span>
         </div>
@@ -239,9 +261,9 @@
       <div class="bars" id="cotBars"></div>
       <div class="divider"></div>
       <div class="panel-head">
-        <span class="panel-title">SPY / 10Y UST · Ciclo vs Defensa</span>
+        <span class="panel-title" data-i18n="spytlt_title">SPY / 10Y UST · Ciclo vs Defensa</span>
         <span class="panel-sub" id="spyTltVal" style="font-weight:700;margin-left:auto">n/d</span>
-        <div class="tooltip" style="width:280px;font-size:10px">Ratio RS de Equities vs Bonos 10Y. Arriba (verde) = Equities ganan, Risk-On, ciclo favorable. Abajo (rojo) = Bonos ganan, Risk-Off, defensa predomina. Escala dinámica se ajusta automáticamente.</div>
+        <div class="tooltip" style="width:280px;font-size:10px" data-i18n="spytlt_tooltip">Ratio RS de Equities vs Bonos 10Y. Arriba (verde) = Equities ganan, Risk-On, ciclo favorable. Abajo (rojo) = Bonos ganan, Risk-Off, defensa predomina. Escala dinámica se ajusta automáticamente.</div>
       </div>
       <div style="display:flex;gap:12px;margin-bottom:12px">
         <div style="flex:1">
@@ -250,17 +272,17 @@
       </div>
       <span id="spyTltChg" style="font-family:var(--mono);font-size:11px;margin-bottom:8px;display:block">0.00%</span>
       <div style="font-size:10px;color:var(--muted);margin-top:6px;line-height:1.3">
-        <strong>Risk-On (verde):</strong> Equity sube más que TLT → confianza, dinero en riesgo, ciclo favorable.<br>
-        <strong>Risk-Off (rojo):</strong> TLT sube más que Equity → miedo, dinero en refugio, defensa predomina.
+        <strong data-i18n="spytlt_on_label">Risk-On (verde):</strong> <span data-i18n="spytlt_on_text">Equity sube más que TLT → confianza, dinero en riesgo, ciclo favorable.</span><br>
+        <strong data-i18n="spytlt_off_label">Risk-Off (rojo):</strong> <span data-i18n="spytlt_off_text">TLT sube más que Equity → miedo, dinero en refugio, defensa predomina.</span>
       </div>
     </div>
   </div>
 
   <div class="panel" style="margin-bottom:16px">
     <div class="panel-head">
-      <span class="panel-title">Mapa jerárquico · toca para desglosar</span>
+      <span class="panel-title" data-panel="heatmap" data-i18n="heatmap_title">Mapa jerárquico · toca para desglosar</span>
       <span class="panel-sub" id="hmLevel"></span>
-      <div class="seg" id="periodSegHM" style="margin-left:auto" title="Período de análisis (cambios enlazados con RRG)">
+      <div class="seg" id="periodSegHM" style="margin-left:auto" data-i18n-title="hm_period_tip" title="Período de análisis (cambios enlazados con RRG)">
         <button data-period="5" class="on">5d</button>
         <button data-period="20">20d</button>
         <button data-period="50">50d</button>
@@ -269,11 +291,11 @@
     <div class="hm-controls">
       <div class="crumbs" id="crumbs"></div>
       <div class="hm-spacer"></div>
-      <span class="metric-label">colorear por</span>
+      <span class="metric-label" data-i18n="color_by">colorear por</span>
       <div class="seg" id="metricSeg">
-        <button data-m="rs" class="on" style="position:relative">Fuerza rel. (RS)<div class="tooltip" style="width:240px;font-size:10px;bottom:100%;left:0;top:auto;margin-bottom:8px">RS-Ratio (Fuerza Relativa): Compara precio vs benchmark. Verde = más fuerte, Rojo = más débil. Rango típico 94-106 (100 = neutral).</div></button>
-        <button data-m="cmf" style="position:relative">Presión (CMF)<div class="tooltip" style="width:240px;font-size:10px;bottom:100%;left:0;top:auto;margin-bottom:8px">Chaikin Money Flow: Presión de compra/venta. Rango -0.5 a +0.5. Positivo = compra, negativo = venta. Indicador leading.</div></button>
-        <button data-m="flow" style="position:relative">Flujo ETF<div class="tooltip" style="width:240px;font-size:10px;bottom:100%;left:0;top:auto;margin-bottom:8px">Flujo implícito ETF: Cambio en AUM × NAV. Solo para ETFs. Dinero observado que entra/sale. Acciones/Cripto/FX = no aplica.</div></button>
+        <button data-m="rs" class="on" style="position:relative"><span data-i18n="metric_rs">Fuerza rel. (RS)</span><div class="tooltip" style="width:240px;font-size:10px;bottom:100%;left:0;top:auto;margin-bottom:8px" data-i18n="metric_rs_tip">RS-Ratio (Fuerza Relativa): Compara precio vs benchmark. Verde = más fuerte, Rojo = más débil. Rango típico 94-106 (100 = neutral).</div></button>
+        <button data-m="cmf" style="position:relative"><span data-i18n="metric_cmf">Presión (CMF)</span><div class="tooltip" style="width:240px;font-size:10px;bottom:100%;left:0;top:auto;margin-bottom:8px" data-i18n="metric_cmf_tip">Chaikin Money Flow: Presión de compra/venta. Rango -0.5 a +0.5. Positivo = compra, negativo = venta. Indicador leading.</div></button>
+        <button data-m="flow" style="position:relative"><span data-i18n="metric_flow">Flujo ETF</span><div class="tooltip" style="width:240px;font-size:10px;bottom:100%;left:0;top:auto;margin-bottom:8px" data-i18n="metric_flow_tip">Flujo implícito ETF: Cambio en AUM × NAV. Solo para ETFs. Dinero observado que entra/sale. Acciones/Cripto/FX = no aplica.</div></button>
       </div>
     </div>
     <div class="heatmap" id="heatmap"></div>
@@ -283,29 +305,323 @@
   <div class="two-col">
     <div class="panel">
       <div class="panel-head">
-        <span class="panel-title">Macro global</span>
+        <span class="panel-title" data-panel="macro" data-i18n="macro_title">Macro global</span>
         <span class="panel-sub">FMP econ + OpenBB/FRED</span>
       </div>
       <div class="macro-grid" id="macroGrid"></div>
     </div>
     <div class="panel">
       <div class="panel-head">
-        <span class="panel-title">Noticias relevantes</span>
-        <span class="panel-sub">via OpenBB</span>
+        <span class="panel-title" data-panel="news" data-i18n="news_title">Noticias relevantes</span>
+        <span class="panel-sub"><span data-i18n="news_via">via</span> OpenBB</span>
       </div>
       <div class="news-list" id="newsList"></div>
     </div>
   </div>
 
   <div class="foot" id="foot"></div>
-  <div class="copyright">© 2026 Leandro R. Bergero, Msc Finance & Banking BSM-UPF</div>
+  <div class="copyright">© 2026 Leandro R. Bergero, Msc Finance & Banking BSM-UPF
+    <span class="social">
+      <a href="https://www.linkedin.com/in/leandro-raul-bergero/" target="_blank" rel="noopener" title="LinkedIn" aria-label="LinkedIn"><svg viewBox="0 0 24 24"><path d="M20.45 20.45h-3.56v-5.57c0-1.33-.02-3.04-1.85-3.04-1.86 0-2.14 1.45-2.14 2.94v5.67H9.35V9h3.42v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.45v6.29zM5.34 7.43a2.06 2.06 0 1 1 0-4.13 2.06 2.06 0 0 1 0 4.13zM7.12 20.45H3.56V9h3.56v11.45zM22.22 0H1.77C.8 0 0 .78 0 1.75v20.5C0 23.22.8 24 1.77 24h20.45c.98 0 1.78-.78 1.78-1.75V1.75C24 .78 23.2 0 22.22 0z"/></svg></a>
+      <a href="https://github.com/leabergero" target="_blank" rel="noopener" title="GitHub" aria-label="GitHub"><svg viewBox="0 0 24 24"><path d="M12 .3a12 12 0 0 0-3.8 23.4c.6.1.8-.26.8-.57v-2c-3.34.72-4.04-1.6-4.04-1.6-.55-1.4-1.34-1.77-1.34-1.77-1.1-.75.08-.73.08-.73 1.2.08 1.84 1.24 1.84 1.24 1.07 1.83 2.8 1.3 3.5 1 .1-.78.42-1.3.76-1.6-2.67-.3-5.47-1.33-5.47-5.93 0-1.3.47-2.38 1.24-3.22-.14-.3-.54-1.52.1-3.18 0 0 1-.32 3.3 1.23a11.5 11.5 0 0 1 6 0c2.28-1.55 3.29-1.23 3.29-1.23.64 1.66.24 2.88.12 3.18.77.84 1.23 1.91 1.23 3.22 0 4.61-2.8 5.63-5.48 5.92.43.37.81 1.1.81 2.22v3.29c0 .31.21.68.82.56A12 12 0 0 0 12 .3z"/></svg></a>
+    </span>
+  </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/pixi.js@8.0.0/dist/pixi.min.js"></script>
+<a id="kofi" href="https://ko-fi.com/Q4D822TFQL" target="_blank" rel="noopener" data-i18n-title="kofi_title" title="Invitame un café en Ko-fi" aria-label="Buy Me a Coffee at ko-fi.com"><img src="data:image/png;base64,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" alt="Buy Me a Coffee at ko-fi.com"></a>
+
 <script>
 const C={bg:'#171821',surface:'#1f2129',surface2:'#272934',border:'#363a47',
   text:'#dcdde3',muted:'#8b8fa0',blue:'#7a9ec8',green:'#8fbc8f',amber:'#d4a25e',
-  purple:'#9885b8',red:'#e85a5a'};
+  purple:'#9885b8',red:'#e85a5a',greenDim:'#3d5c3d',redDim:'#5c3d3d'};
+
+/* ---- i18n: español / inglés / alemán ---- */
+const LOCALE_TAG={es:'es-ES',en:'en-US',de:'de-DE'};
+const I18N={
+  es:{
+    brand:'cross-asset',
+    regime_label:'Régimen de mercado',
+    neutral:'Neutral', neutral_upper:'NEUTRAL',
+    regime_tooltip:'Z-score compuesto de 5 ratios cíclicos vs defensivos. Verde (positivo) = Risk-On, dinero en riesgo, ciclo favorable. Rojo (negativo) = Risk-Off, defensa predomina. Rango típico ±3. La barra muestra la posición actual entre los extremos.',
+    regime_score_label:'compuesto z',
+    rrg_title:'RRG · Rotación relativa',
+    rrg_sectores_label:'Sectores · vs S&amp;P500',
+    rrg_sectores_tip:'11 sectores del S&P 500: Energía, Tech, Financials, Salud, Industriales, Materiales, Cons. básico, Cons. discrec., Utilities, Inmobiliario, Comunicaciones. Benchmark: SPY (índice total).',
+    rrg_cross_label:'Cross-asset · vs ACWI',
+    rrg_cross_tip:'8 clases de activos globales: Equity (acciones), Bonos, Commodities, Divisas, Oro, HY (bonos alto rendimiento), 10Y UST (bonos). Benchmark: ACWI (índice mundial).',
+    rrg_period_tip:'Ventana temporal de análisis RRG',
+    quad_leader:'Líder', quad_weakening:'Debilitándose', quad_lagging:'Rezagado', quad_improving:'Mejorando',
+    rrg_tail_tpl:'— cola = análisis a {p}d (últimas 5 lecturas)',
+    time_unit_5:'1 lectura = 1 día', time_unit_20:'1 lectura = 1 semana', time_unit_50:'1 lectura = 10 días',
+    roro_title:'RORO · Componentes (z-score)',
+    roro_sub_tip:'Risk-On: favorables al riesgo (ciclo, crecimiento). Risk-Off: defensivos (refugio, caída)',
+    cot_title:'COT · Posición neta no-comercial',
+    cot_sub:'SEMANAL (viernes CFTC)',
+    spytlt_title:'SPY / 10Y UST · Ciclo vs Defensa',
+    spytlt_tooltip:'Ratio RS de Equities vs Bonos 10Y. Arriba (verde) = Equities ganan, Risk-On, ciclo favorable. Abajo (rojo) = Bonos ganan, Risk-Off, defensa predomina. Escala dinámica se ajusta automáticamente.',
+    spytlt_on_label:'Risk-On (verde):', spytlt_on_text:'Equity sube más que TLT → confianza, dinero en riesgo, ciclo favorable.',
+    spytlt_off_label:'Risk-Off (rojo):', spytlt_off_text:'TLT sube más que Equity → miedo, dinero en refugio, defensa predomina.',
+    label_spy:'SPY', label_bonds:'BONOS',
+    heatmap_title:'Mapa jerárquico · toca para desglosar',
+    hm_period_tip:'Período de análisis (cambios enlazados con RRG)',
+    color_by:'colorear por',
+    metric_rs:'Fuerza rel. (RS)', metric_rs_tip:'RS-Ratio (Fuerza Relativa): Compara precio vs benchmark. Verde = más fuerte, Rojo = más débil. Rango típico 94-106 (100 = neutral).',
+    metric_cmf:'Presión (CMF)', metric_cmf_tip:'Chaikin Money Flow: Presión de compra/venta. Rango -0.5 a +0.5. Positivo = compra, negativo = venta. Indicador leading.',
+    metric_flow:'Flujo ETF', metric_flow_tip:'Flujo implícito ETF: Cambio en AUM × NAV. Solo para ETFs. Dinero observado que entra/sale. Acciones/Cripto/FX = no aplica.',
+    macro_title:'Macro global', news_title:'Noticias relevantes', news_via:'via',
+    kofi_title:'Invitame un café en Ko-fi',
+    level_classes:'clases', level_sectors:'sectores', level_industries:'industrias', level_assets:'activos',
+    flow_out:'salida', flow_in:'entrada', size_weight:'tamaño = peso',
+    etf_accum_tpl:'⚠️ <strong>Flujo ETF acumulando:</strong> FMP <code>/etf/holdings</code> requiere plan pago, así que el flujo se construye localmente con <code>scrape_etf_flows.py</code> (1 snapshot/día). Llevás <strong>{depth} día</strong> — la ventana de 5d aparece al 6º día. Mientras tanto, usá RS y CMF.',
+    etf_local_tpl:'⚠️ <strong>Flujo ETF (local):</strong> {depth} días acumulados. Esta ventana necesita más histórico; probá una ventana menor o seguí corriendo el scraper diario.',
+    mode_live:'live · fmp', mode_partial:'parcial', mode_demo:'demo · sintético', mode_loading:'cargando…',
+    loading_5d:'Cargando 5d...', loading_period:'Cambiando período...', loading_done:'✓ Finalizado',
+    loading_err:'✗ Error', loading_err_period:'✗ Error cambiando período',
+    foot_html:'Capas y cadencia: RRG + presión CMF + ratios RORO → <code>horaria</code> · flujo implícito ETF (Δ AUM × NAV, <code>FMP /etf/holdings</code>) → <code>diaria</code> · COT → <code>semanal</code> · macro (<code>FMP econ + OpenBB/FRED</code>) → <code>diaria</code> · noticias (<code>OpenBB</code>) → <code>intradía</code>.<br>Disciplina: RS-Ratio y CMF se leen como <b>fuerza/presión</b> (inferencia), nunca como “entró/salió capital”. Solo <b>Flujo ETF</b> afirma dinero observado.',
+    led_rrg_tip:'Gráfico de rotación relativa (RRG). Eje X: RS-Ratio (fuerza relativa vs benchmark). Eje Y: RS-Momentum (velocidad del cambio). Pasa mouse sobre los cuadrantes para aislar: Líder (sube momentum), Debilitándose (baja momentum), Rezagado (débil), Mejorando (recuperándose). La cola muestra las últimas 5 lecturas de trayectoria.',
+    led_roro_tip:'Régimen de riesgo (Risk-On/Risk-Off). Z-scores de ratios cíclicos vs defensivos: SPY/TLT (acciones vs bonos), Cobre/Oro (riesgo vs refugio), etc. Verde (+) = favorables al riesgo. Rojo (-) = defensivos. Rango típico ±3. Suma los componentes arriba = risk-on confirmado, abajo = risk-off.',
+    led_macro_tip:'Indicadores económicos en tiempo real: Tasas de referencia (Fed, BCE, BoJ), inflación (CPI), divisas (EUR/USD, USD/JPY), commodities (WTI, Brent, oro), bonos (UST 10Y), DXY, BTC. Fuentes: FRED (tasas/CPI), yfinance (precios spot), Quandl (datos). Chg = cambio desde último dato. Sparkline = histórico (últimas 12 períodos).',
+    led_cot_tip:'Posición neta de especuladores en futuros (datos SEMANALES del CFTC, viernes). Muestra largos netos (bullish) vs cortos netos (bearish) en ES (S&P 500), CL (crudo), GC (oro), ZN (bonos 10Y), DX (dólar), BTC. Cambio = variación semana-a-semana. Extremos (>>0 o <<0) sugieren posicionamiento extremo de especuladores = posible reversión.',
+    led_heatmap_tip:'Mapa jerárquico de activos. Clickea cualquier tile para expandir. Colores: Verde = RS alcista (supera benchmark), Rojo = RS bajista, Gris = neutral. Tamaño = peso en cartera. Selecciona métrica: Fuerza rel (RS), Presión (CMF), Flujo ETF (solo para fondos). Tamaño relativo muestra importancia en la rotación.',
+    led_news_tip:'Últimas noticias de mercado con análisis de sentimiento: Verde = positivo (compras/optimismo), Rojo = negativo (ventas/pesimismo), Gris = neutro (informativo). Hora = cuándo se publicó. Fuente = OpenBB (intradía). Usa sentimiento para confirmar directionalidad de la rotación.'
+  },
+  en:{
+    brand:'cross-asset',
+    regime_label:'Market regime',
+    neutral:'Neutral', neutral_upper:'NEUTRAL',
+    regime_tooltip:'Composite z-score of 5 cyclical vs defensive ratios. Green (positive) = Risk-On, money in risk, favorable cycle. Red (negative) = Risk-Off, defense prevails. Typical range ±3. The bar shows the current position between the extremes.',
+    regime_score_label:'composite z',
+    rrg_title:'RRG · Relative rotation',
+    rrg_sectores_label:'Sectors · vs S&amp;P500',
+    rrg_sectores_tip:'11 S&P 500 sectors: Energy, Tech, Financials, Health, Industrials, Materials, Cons. Staples, Cons. Discret., Utilities, Real Estate, Communications. Benchmark: SPY (total index).',
+    rrg_cross_label:'Cross-asset · vs ACWI',
+    rrg_cross_tip:'8 global asset classes: Equity (stocks), Bonds, Commodities, FX, Gold, HY (high yield bonds), 10Y UST (bonds). Benchmark: ACWI (world index).',
+    rrg_period_tip:'RRG analysis time window',
+    quad_leader:'Leading', quad_weakening:'Weakening', quad_lagging:'Lagging', quad_improving:'Improving',
+    rrg_tail_tpl:'— tail = {p}d analysis (last 5 readings)',
+    time_unit_5:'1 reading = 1 day', time_unit_20:'1 reading = 1 week', time_unit_50:'1 reading = 10 days',
+    roro_title:'RORO · Components (z-score)',
+    roro_sub_tip:'Risk-On: favorable for risk (cycle, growth). Risk-Off: defensive (safe haven, drawdown)',
+    cot_title:'COT · Non-commercial net position',
+    cot_sub:'WEEKLY (Friday CFTC)',
+    spytlt_title:'SPY / 10Y UST · Cycle vs Defense',
+    spytlt_tooltip:'RS ratio of Equities vs 10Y Bonds. Up (green) = Equities win, Risk-On, favorable cycle. Down (red) = Bonds win, Risk-Off, defense prevails. Dynamic scale adjusts automatically.',
+    spytlt_on_label:'Risk-On (green):', spytlt_on_text:'Equity outperforms TLT → confidence, money in risk, favorable cycle.',
+    spytlt_off_label:'Risk-Off (red):', spytlt_off_text:'TLT outperforms Equity → fear, money in safe haven, defense prevails.',
+    label_spy:'SPY', label_bonds:'BONDS',
+    heatmap_title:'Hierarchical map · tap to drill down',
+    hm_period_tip:'Analysis period (linked with RRG changes)',
+    color_by:'color by',
+    metric_rs:'Rel. strength (RS)', metric_rs_tip:'RS-Ratio (Relative Strength): Compares price vs benchmark. Green = stronger, Red = weaker. Typical range 94-106 (100 = neutral).',
+    metric_cmf:'Pressure (CMF)', metric_cmf_tip:'Chaikin Money Flow: Buy/sell pressure. Range -0.5 to +0.5. Positive = buying, negative = selling. Leading indicator.',
+    metric_flow:'ETF flow', metric_flow_tip:'Implied ETF flow: Change in AUM × NAV. ETFs only. Observed money in/out. Stocks/Crypto/FX = not applicable.',
+    macro_title:'Global macro', news_title:'Relevant news', news_via:'via',
+    kofi_title:'Buy me a coffee on Ko-fi',
+    level_classes:'classes', level_sectors:'sectors', level_industries:'industries', level_assets:'assets',
+    flow_out:'outflow', flow_in:'inflow', size_weight:'size = weight',
+    etf_accum_tpl:'⚠️ <strong>ETF flow accumulating:</strong> FMP <code>/etf/holdings</code> requires a paid plan, so the flow is built locally with <code>scrape_etf_flows.py</code> (1 snapshot/day). You have <strong>{depth} day(s)</strong> so far — the 5d window appears on day 6. Meanwhile, use RS and CMF.',
+    etf_local_tpl:'⚠️ <strong>ETF flow (local):</strong> {depth} days accumulated. This window needs more history; try a shorter window or keep running the daily scraper.',
+    mode_live:'live · fmp', mode_partial:'partial', mode_demo:'demo · synthetic', mode_loading:'loading…',
+    loading_5d:'Loading 5d...', loading_period:'Changing period...', loading_done:'✓ Done',
+    loading_err:'✗ Error', loading_err_period:'✗ Error changing period',
+    foot_html:'Layers &amp; cadence: RRG + CMF pressure + RORO ratios → <code>hourly</code> · implied ETF flow (Δ AUM × NAV, <code>FMP /etf/holdings</code>) → <code>daily</code> · COT → <code>weekly</code> · macro (<code>FMP econ + OpenBB/FRED</code>) → <code>daily</code> · news (<code>OpenBB</code>) → <code>intraday</code>.<br>Discipline: RS-Ratio and CMF read as <b>strength/pressure</b> (inference), never as “money entered/exited”. Only <b>ETF flow</b> asserts observed money.',
+    led_rrg_tip:'Relative rotation graph (RRG). X axis: RS-Ratio (relative strength vs benchmark). Y axis: RS-Momentum (rate of change). Hover the quadrants to isolate: Leading (rising momentum), Weakening (falling momentum), Lagging (weak), Improving (recovering). The tail shows the last 5 trajectory readings.',
+    led_roro_tip:'Risk regime (Risk-On/Risk-Off). Z-scores of cyclical vs defensive ratios: SPY/TLT (stocks vs bonds), Copper/Gold (risk vs haven), etc. Green (+) = favorable for risk. Red (-) = defensive. Typical range ±3. Sum of components above = risk-on confirmed, below = risk-off.',
+    led_macro_tip:'Real-time economic indicators: Reference rates (Fed, ECB, BoJ), inflation (CPI), FX (EUR/USD, USD/JPY), commodities (WTI, Brent, gold), bonds (UST 10Y), DXY, BTC. Sources: FRED (rates/CPI), yfinance (spot prices), Quandl (data). Chg = change since last reading. Sparkline = history (last 12 periods).',
+    led_cot_tip:'Net speculator position in futures (WEEKLY CFTC data, Friday). Shows net longs (bullish) vs net shorts (bearish) in ES (S&P 500), CL (crude), GC (gold), ZN (10Y bonds), DX (dollar), BTC. Change = week-over-week variation. Extremes (>>0 or <<0) suggest extreme speculator positioning = possible reversal.',
+    led_heatmap_tip:'Hierarchical asset map. Click any tile to expand. Colors: Green = bullish RS (beats benchmark), Red = bearish RS, Gray = neutral. Size = portfolio weight. Choose metric: Rel. strength (RS), Pressure (CMF), ETF flow (funds only). Relative size shows importance in the rotation.',
+    led_news_tip:'Latest market news with sentiment analysis: Green = positive (buying/optimism), Red = negative (selling/pessimism), Gray = neutral (informative). Time = when published. Source = OpenBB (intraday). Use sentiment to confirm the rotation’s directionality.'
+  },
+  de:{
+    brand:'Cross-Asset',
+    regime_label:'Marktregime',
+    neutral:'Neutral', neutral_upper:'NEUTRAL',
+    regime_tooltip:'Zusammengesetzter Z-Score aus 5 zyklischen vs. defensiven Ratios. Grün (positiv) = Risk-On, Geld im Risiko, günstiger Zyklus. Rot (negativ) = Risk-Off, Absicherung überwiegt. Typischer Bereich ±3. Der Balken zeigt die aktuelle Position zwischen den Extremen.',
+    regime_score_label:'Composite Z',
+    rrg_title:'RRG · Relative Rotation',
+    rrg_sectores_label:'Sektoren · vs S&amp;P500',
+    rrg_sectores_tip:'11 S&P-500-Sektoren: Energie, Tech, Financials, Gesundheit, Industrie, Rohstoffe, Basiskonsum, Zykl. Konsum, Versorger, Immobilien, Kommunikation. Benchmark: SPY (Gesamtindex).',
+    rrg_cross_label:'Cross-Asset · vs ACWI',
+    rrg_cross_tip:'8 globale Anlageklassen: Equity (Aktien), Anleihen, Rohstoffe, Devisen, Gold, HY (Hochzinsanleihen), 10J UST (Anleihen). Benchmark: ACWI (Weltindex).',
+    rrg_period_tip:'Zeitfenster der RRG-Analyse',
+    quad_leader:'Führend', quad_weakening:'Schwächelnd', quad_lagging:'Zurückfallend', quad_improving:'Verbessernd',
+    rrg_tail_tpl:'— Schweif = {p}-Tage-Analyse (letzte 5 Messwerte)',
+    time_unit_5:'1 Messwert = 1 Tag', time_unit_20:'1 Messwert = 1 Woche', time_unit_50:'1 Messwert = 10 Tage',
+    roro_title:'RORO · Komponenten (Z-Score)',
+    roro_sub_tip:'Risk-On: risikofreundlich (Zyklus, Wachstum). Risk-Off: defensiv (sicherer Hafen, Rückgang)',
+    cot_title:'COT · Netto-Nichtkommerzielle Position',
+    cot_sub:'WÖCHENTLICH (Freitag CFTC)',
+    spytlt_title:'SPY / 10J UST · Zyklus vs. Absicherung',
+    spytlt_tooltip:'RS-Verhältnis Aktien vs. 10J-Anleihen. Oben (grün) = Aktien gewinnen, Risk-On, günstiger Zyklus. Unten (rot) = Anleihen gewinnen, Risk-Off, Absicherung überwiegt. Dynamische Skala passt sich automatisch an.',
+    spytlt_on_label:'Risk-On (grün):', spytlt_on_text:'Aktien schlagen TLT → Vertrauen, Geld im Risiko, günstiger Zyklus.',
+    spytlt_off_label:'Risk-Off (rot):', spytlt_off_text:'TLT schlägt Aktien → Angst, Geld im sicheren Hafen, Absicherung überwiegt.',
+    label_spy:'SPY', label_bonds:'ANLEIHEN',
+    heatmap_title:'Hierarchische Karte · zum Aufschlüsseln tippen',
+    hm_period_tip:'Analysezeitraum (verknüpft mit RRG-Änderungen)',
+    color_by:'einfärben nach',
+    metric_rs:'Rel. Stärke (RS)', metric_rs_tip:'RS-Ratio (relative Stärke): Vergleicht Preis vs. Benchmark. Grün = stärker, Rot = schwächer. Typischer Bereich 94-106 (100 = neutral).',
+    metric_cmf:'Druck (CMF)', metric_cmf_tip:'Chaikin Money Flow: Kauf-/Verkaufsdruck. Bereich -0,5 bis +0,5. Positiv = Kauf, negativ = Verkauf. Vorlaufender Indikator.',
+    metric_flow:'ETF-Fluss', metric_flow_tip:'Impliziter ETF-Fluss: Änderung des AUM × NAV. Nur für ETFs. Beobachtetes Geld, das ein-/ausfließt. Aktien/Krypto/FX = nicht anwendbar.',
+    macro_title:'Globale Makrodaten', news_title:'Relevante Nachrichten', news_via:'über',
+    kofi_title:'Spendier mir einen Kaffee auf Ko-fi',
+    level_classes:'Klassen', level_sectors:'Sektoren', level_industries:'Branchen', level_assets:'Werte',
+    flow_out:'Abfluss', flow_in:'Zufluss', size_weight:'Größe = Gewicht',
+    etf_accum_tpl:'⚠️ <strong>ETF-Fluss wird aufgebaut:</strong> FMP <code>/etf/holdings</code> erfordert einen kostenpflichtigen Plan, daher wird der Fluss lokal mit <code>scrape_etf_flows.py</code> aufgebaut (1 Snapshot/Tag). Bisher <strong>{depth} Tag(e)</strong> — das 5-Tage-Fenster erscheint am 6. Tag. In der Zwischenzeit RS und CMF nutzen.',
+    etf_local_tpl:'⚠️ <strong>ETF-Fluss (lokal):</strong> {depth} Tage gesammelt. Dieses Fenster braucht mehr Historie; probiere ein kürzeres Fenster oder lasse den täglichen Scraper weiterlaufen.',
+    mode_live:'live · fmp', mode_partial:'teilweise', mode_demo:'Demo · synthetisch', mode_loading:'lädt…',
+    loading_5d:'Lade 5T...', loading_period:'Zeitraum wird geändert...', loading_done:'✓ Fertig',
+    loading_err:'✗ Fehler', loading_err_period:'✗ Fehler beim Ändern des Zeitraums',
+    foot_html:'Ebenen &amp; Taktung: RRG + CMF-Druck + RORO-Ratios → <code>stündlich</code> · impliziter ETF-Fluss (Δ AUM × NAV, <code>FMP /etf/holdings</code>) → <code>täglich</code> · COT → <code>wöchentlich</code> · Makro (<code>FMP econ + OpenBB/FRED</code>) → <code>täglich</code> · Nachrichten (<code>OpenBB</code>) → <code>untertägig</code>.<br>Disziplin: RS-Ratio und CMF werden als <b>Stärke/Druck</b> gelesen (Inferenz), nie als „Geld ist ein-/ausgeflossen“. Nur <b>ETF-Fluss</b> behauptet beobachtetes Geld.',
+    led_rrg_tip:'Relative-Rotation-Graph (RRG). X-Achse: RS-Ratio (relative Stärke vs. Benchmark). Y-Achse: RS-Momentum (Änderungsgeschwindigkeit). Maus über die Quadranten bewegen, um zu isolieren: Führend (steigendes Momentum), Schwächelnd (fallendes Momentum), Zurückfallend (schwach), Verbessernd (erholend). Der Schweif zeigt die letzten 5 Verlaufsmesswerte.',
+    led_roro_tip:'Risikoregime (Risk-On/Risk-Off). Z-Scores zyklischer vs. defensiver Ratios: SPY/TLT (Aktien vs. Anleihen), Kupfer/Gold (Risiko vs. Hafen), usw. Grün (+) = risikofreundlich. Rot (-) = defensiv. Typischer Bereich ±3. Summe der Komponenten oben = Risk-On bestätigt, unten = Risk-Off.',
+    led_macro_tip:'Wirtschaftsindikatoren in Echtzeit: Leitzinsen (Fed, EZB, BoJ), Inflation (VPI), Devisen (EUR/USD, USD/JPY), Rohstoffe (WTI, Brent, Gold), Anleihen (UST 10J), DXY, BTC. Quellen: FRED (Zinsen/VPI), yfinance (Spotpreise), Quandl (Daten). Chg = Änderung seit letztem Wert. Sparkline = Historie (letzte 12 Perioden).',
+    led_cot_tip:'Netto-Spekulantenposition in Futures (WÖCHENTLICHE CFTC-Daten, Freitag). Zeigt Netto-Long (bullisch) vs. Netto-Short (bärisch) bei ES (S&P 500), CL (Rohöl), GC (Gold), ZN (10J-Anleihen), DX (Dollar), BTC. Änderung = Woche-zu-Woche-Veränderung. Extreme (>>0 oder <<0) deuten auf extreme Spekulantenpositionierung hin = mögliche Trendwende.',
+    led_heatmap_tip:'Hierarchische Asset-Karte. Klicke auf eine Kachel zum Aufklappen. Farben: Grün = bullische RS (schlägt Benchmark), Rot = bärische RS, Grau = neutral. Größe = Portfoliogewicht. Metrik wählen: Rel. Stärke (RS), Druck (CMF), ETF-Fluss (nur Fonds). Relative Größe zeigt Bedeutung in der Rotation.',
+    led_news_tip:'Aktuelle Marktnachrichten mit Sentiment-Analyse: Grün = positiv (Käufe/Optimismus), Rot = negativ (Verkäufe/Pessimismus), Grau = neutral (informativ). Zeit = Veröffentlichung. Quelle = OpenBB (untertägig). Sentiment nutzen, um die Richtung der Rotation zu bestätigen.'
+  }
+};
+const RISK_STATE_MAP={
+  'Risk-On':{es:'Risk-On',en:'Risk-On',de:'Risk-On'},
+  'Risk-Off':{es:'Risk-Off',en:'Risk-Off',de:'Risk-Off'},
+  'Neutral / transición':{es:'Neutral / transición',en:'Neutral / transition',de:'Neutral / Übergang'}
+};
+const NAME_MAP={
+  'Equity':{en:'Equity',de:'Aktien'},
+  'Energía':{en:'Energy',de:'Energie'},
+  'Equip. & Servicios':{en:'Equip. & Services',de:'Ausrüst. & Dienste'},
+  'Refino & Marketing':{en:'Refining & Marketing',de:'Raffinerie & Vertrieb'},
+  'Integradas':{en:'Integrated',de:'Integrierte'},
+  'Tecnología':{en:'Technology',de:'Technologie'},
+  'Semiconductores':{en:'Semiconductors',de:'Halbleiter'},
+  'Financials':{en:'Financials',de:'Finanzwerte'},
+  'Bancos':{en:'Banks',de:'Banken'},
+  'Mercados de capital':{en:'Capital Markets',de:'Kapitalmärkte'},
+  'Seguros':{en:'Insurance',de:'Versicherungen'},
+  'Salud':{en:'Health Care',de:'Gesundheit'},
+  'Consumo discrec.':{en:'Consumer Discretionary',de:'Zykl. Konsum'},
+  'Consumo básico':{en:'Consumer Staples',de:'Basiskonsum'},
+  'Cons. discrec.':{en:'Cons. Discret.',de:'Zykl. Konsum'},
+  'Cons. básico':{en:'Cons. Staples',de:'Basiskonsum'},
+  'Industriales':{en:'Industrials',de:'Industrie'},
+  'Materiales':{en:'Materials',de:'Rohstoffe'},
+  'Utilities':{en:'Utilities',de:'Versorger'},
+  'Inmobiliario':{en:'Real Estate',de:'Immobilien'},
+  'Comunicaciones':{en:'Communication Svcs',de:'Kommunikation'},
+  'Comunic.':{en:'Comm. Svcs',de:'Kommunik.'},
+  'Bonos':{en:'Bonds',de:'Anleihen'},
+  'Corto plazo · SHY':{en:'Short-term · SHY',de:'Kurzfristig · SHY'},
+  'Intermedio · IEF':{en:'Intermediate · IEF',de:'Mittelfristig · IEF'},
+  'Largo · 10Y UST':{en:'Long · 10Y UST',de:'Langfristig · 10J UST'},
+  'Crédito IG · LQD':{en:'IG Credit · LQD',de:'IG-Kredit · LQD'},
+  'EM deuda · EMB':{en:'EM Debt · EMB',de:'EM-Anleihen · EMB'},
+  'Gas nat. · UNG':{en:'Nat. Gas · UNG',de:'Erdgas · UNG'},
+  'Metales preciosos':{en:'Precious Metals',de:'Edelmetalle'},
+  'Oro · GLD':{en:'Gold · GLD',de:'Gold · GLD'},
+  'Plata · SLV':{en:'Silver · SLV',de:'Silber · SLV'},
+  'Platino · PPLT':{en:'Platinum · PPLT',de:'Platin · PPLT'},
+  'Metales industriales':{en:'Industrial Metals',de:'Industriemetalle'},
+  'Cobre · CPER':{en:'Copper · CPER',de:'Kupfer · CPER'},
+  'Base · DBB':{en:'Base Metals · DBB',de:'Basismetalle · DBB'},
+  'Agrícolas':{en:'Agriculture',de:'Agrarrohstoffe'},
+  'Maíz · CORN':{en:'Corn · CORN',de:'Mais · CORN'},
+  'Trigo · WEAT':{en:'Wheat · WEAT',de:'Weizen · WEAT'},
+  'Soja · SOYB':{en:'Soybeans · SOYB',de:'Soja · SOYB'},
+  'Cripto':{en:'Crypto',de:'Krypto'},
+  'Divisas':{en:'FX',de:'Devisen'},
+  'Oro':{en:'Gold',de:'Gold'},
+  'Plata':{en:'Silver',de:'Silber'},
+  'High Yield':{en:'High Yield',de:'Hochzins'},
+  '10Y UST':{en:'10Y UST',de:'10J UST'},
+  'SPY / Bonos USA':{en:'SPY / US Bonds',de:'SPY / US-Anleihen'},
+  'Cobre / Oro':{en:'Copper / Gold',de:'Kupfer / Gold'},
+  'Cíclicos / Defens.':{en:'Cyclical / Defens.',de:'Zyklisch / Defensiv'},
+  'Spread HY (inv)':{en:'HY Spread (inv)',de:'HY-Spread (inv)'},
+  'Crudo · CL':{en:'Crude · CL',de:'Rohöl · CL'},
+  'Oro · GC':{en:'Gold · GC',de:'Gold · GC'},
+  '10Y · ZN':{en:'10Y · ZN',de:'10J · ZN'},
+  'Dólar · DX':{en:'Dollar · DX',de:'Dollar · DX'},
+  'S&P fut · ES':{en:'S&P fut · ES',de:'S&P Fut. · ES'},
+  'BCE depo':{en:'ECB depo',de:'EZB Einlage'},
+  'IPC EE.UU. a/a':{en:'US CPI y/y',de:'US-VPI J/J'},
+  'IPC Eurozona':{en:'Eurozone CPI',de:'Eurozone VPI'}
+};
+const MACRO_TOOLTIPS={
+  es:{
+    'Fed funds':'Tasa de referencia del Banco Central Estadounidense. Guía la política monetaria y el costo del crédito.',
+    'BCE depo':'Tasa de depósito del Banco Central Europeo. Indicador de política monetaria europea.',
+    'BoJ':'Tasa de referencia del Banco de Japón. Refleja la postura monetaria de Japón.',
+    'PBoC LPR 1A':'Tasa de crédito preferencial a 1 año del Banco Central de China.',
+    'EUR / USD':'Tipo de cambio euro-dólar. Indica fortaleza relativa de monedas.',
+    'USD / JPY':'Tipo de cambio dólar-yen. Refleja confianza en economía US vs Japón.',
+    'IPC EE.UU. a/a':'Índice de Precios al Consumo de USA. Mide inflación interanual.',
+    'IPC Eurozona':'Índice de Precios al Consumo de la Eurozona. Medida de inflación europea.',
+    'WTI':'Precio del barril de crudo West Texas Intermediate. Indicador de ciclo económico.',
+    'Brent':'Precio del crudo Brent. Referencia internacional de crudo.',
+    'Oro':'Precio del oro. Activo de refugio, sube con riesgo-off.',
+    'Plata':'Precio de la plata. Metal precioso, activo de ciclo.',
+    'Plata/Oro':'Relación plata/oro. Sube en ciclos alcistas, baja con riesgo-off.',
+    'UST 10Y':'Rendimiento del bono del Tesoro USA a 10 años. Guía tasas hipotecarias.',
+    'DXY':'Índice dólar. Mide fortaleza del USD vs canasta de monedas.',
+    'VIX':'Índice de volatilidad implícita (miedo). Sube en caídas de mercado.',
+    'BTC':'Bitcoin. Activo de riesgo, correlacionado con ciclo.',
+    'Gold/Silver':'Ratio oro/plata. Media histórica 60:1. Actual 76.5:1 = plata cayendo (defensiva), oro sostenido (seguro). Sube = miedo. Baja = confianza.'
+  },
+  en:{
+    'Fed funds':'US Federal Reserve reference rate. Guides monetary policy and the cost of credit.',
+    'BCE depo':'European Central Bank deposit rate. European monetary policy indicator.',
+    'BoJ':'Bank of Japan reference rate. Reflects Japan’s monetary stance.',
+    'PBoC LPR 1A':'China’s People’s Bank 1-year loan prime rate.',
+    'EUR / USD':'Euro-dollar exchange rate. Indicates relative currency strength.',
+    'USD / JPY':'Dollar-yen exchange rate. Reflects confidence in the US vs Japan economy.',
+    'IPC EE.UU. a/a':'US Consumer Price Index. Measures year-over-year inflation.',
+    'IPC Eurozona':'Eurozone Consumer Price Index. European inflation gauge.',
+    'WTI':'West Texas Intermediate crude oil barrel price. Economic cycle indicator.',
+    'Brent':'Brent crude oil price. International crude oil benchmark.',
+    'Oro':'Gold price. Safe-haven asset, rises with risk-off.',
+    'Plata':'Silver price. Precious metal, cyclical asset.',
+    'Plata/Oro':'Silver/gold ratio. Rises in bull cycles, falls with risk-off.',
+    'UST 10Y':'US 10-year Treasury yield. Guides mortgage rates.',
+    'DXY':'Dollar index. Measures USD strength vs a basket of currencies.',
+    'VIX':'Implied volatility index (fear gauge). Rises in market selloffs.',
+    'BTC':'Bitcoin. Risk asset, correlated with the cycle.',
+    'Gold/Silver':'Gold/silver ratio. Historical average 60:1. Current 76.5:1 = silver falling (defensive), gold holding (safe). Rising = fear. Falling = confidence.'
+  },
+  de:{
+    'Fed funds':'Leitzins der US-Notenbank. Steuert die Geldpolitik und die Kreditkosten.',
+    'BCE depo':'Einlagensatz der Europäischen Zentralbank. Indikator der europäischen Geldpolitik.',
+    'BoJ':'Leitzins der Bank of Japan. Spiegelt die geldpolitische Haltung Japans wider.',
+    'PBoC LPR 1A':'Einjähriger bevorzugter Kreditzins der chinesischen Zentralbank.',
+    'EUR / USD':'Euro-Dollar-Wechselkurs. Zeigt relative Währungsstärke.',
+    'USD / JPY':'Dollar-Yen-Wechselkurs. Spiegelt das Vertrauen in die US- vs. japanische Wirtschaft.',
+    'IPC EE.UU. a/a':'US-Verbraucherpreisindex. Misst die Inflation im Jahresvergleich.',
+    'IPC Eurozona':'Verbraucherpreisindex der Eurozone. Europäisches Inflationsmaß.',
+    'WTI':'Preis pro Barrel West Texas Intermediate. Konjunkturindikator.',
+    'Brent':'Preis für Brent-Rohöl. Internationale Rohölreferenz.',
+    'Oro':'Goldpreis. Sicherer Hafen, steigt bei Risk-Off.',
+    'Plata':'Silberpreis. Edelmetall, zyklischer Vermögenswert.',
+    'Plata/Oro':'Silber/Gold-Verhältnis. Steigt in Aufwärtszyklen, fällt bei Risk-Off.',
+    'UST 10Y':'Rendite der 10-jährigen US-Staatsanleihe. Steuert Hypothekenzinsen.',
+    'DXY':'Dollarindex. Misst die USD-Stärke gegenüber einem Währungskorb.',
+    'VIX':'Index der impliziten Volatilität (Angstindex). Steigt bei Markteinbrüchen.',
+    'BTC':'Bitcoin. Risikoanlage, korreliert mit dem Zyklus.',
+    'Gold/Silver':'Gold/Silber-Verhältnis. Historischer Durchschnitt 60:1. Aktuell 76,5:1 = Silber fällt (defensiv), Gold hält (sicher). Steigend = Angst. Fallend = Vertrauen.'
+  }
+};
+let LANG=localStorage.getItem('flg_lang')||'es';
+function tr(key){return(I18N[LANG]&&I18N[LANG][key])!=null?I18N[LANG][key]:(I18N.es[key]||key);}
+function trName(name){const e=NAME_MAP[name];return e&&LANG!=='es'?(e[LANG]||name):name;}
+function trRiskState(state){const e=RISK_STATE_MAP[state];return e?(e[LANG]||state):state;}
+function applyI18n(){
+  document.documentElement.lang=LANG;
+  document.querySelectorAll('[data-i18n]').forEach(el=>{el.innerHTML=tr(el.getAttribute('data-i18n'));});
+  document.querySelectorAll('[data-i18n-title]').forEach(el=>{el.setAttribute('title',tr(el.getAttribute('data-i18n-title')));});
+  document.querySelectorAll('#langSwitch button').forEach(b=>b.classList.toggle('on',b.dataset.lang===LANG));
+}
+document.getElementById('langSwitch').addEventListener('click',e=>{
+  const b=e.target.closest('button');if(!b)return;
+  LANG=b.dataset.lang;localStorage.setItem('flg_lang',LANG);
+  applyI18n();renderAll();
+});
 
 /* ---- DEMO embebido: fallback si el backend no responde (p.ej. abrir el archivo
    directamente sin Flask). Normalmente /api/snapshot lo reemplaza. ---- */
@@ -420,12 +736,13 @@ const elHeat=document.getElementById('heatmap'),elCrumbs=document.getElementById
 function curNode(){return path[path.length-1];}
 function renderCrumbs(){elCrumbs.innerHTML='';path.forEach((nd,i)=>{
   if(i>0){const s=document.createElement('span');s.className='crumb-sep';s.textContent='▸';elCrumbs.appendChild(s);}
-  const b=document.createElement('button');b.className='crumb'+(i===path.length-1?' cur':'');b.textContent=nd.name;
+  const b=document.createElement('button');b.className='crumb'+(i===path.length-1?' cur':'');b.textContent=trName(nd.name);
   if(i<path.length-1)b.onclick=()=>{path=path.slice(0,i+1);renderHeatmap();};elCrumbs.appendChild(b);});}
 function renderHeatmap(){
   renderCrumbs();
   const node=curNode(),kids=node.children||[];
-  elLevel.textContent=kids.length+' '+(path.length===1?'clases':path.length===2?'sectores':path.length===3?'industrias':'activos');
+  const levelWord=path.length===1?tr('level_classes'):path.length===2?tr('level_sectors'):path.length===3?tr('level_industries'):tr('level_assets');
+  elLevel.textContent=kids.length+' '+levelWord;
 
   const totW=kids.reduce((s,k)=>s+(k.w||1),0)||1;
   elHeat.innerHTML='';
@@ -452,7 +769,7 @@ function renderHeatmap(){
     `;
 
     tile.innerHTML=`
-      <div class="tile-nm">${k.name}</div>
+      <div class="tile-nm">${trName(k.name)}</div>
       <div class="tile-meta">
         <span class="tile-val">${fmtMetric(metric,k)}</span>
         <span class="tile-sub">${isLeaf?'':'▸'}</span>
@@ -471,16 +788,14 @@ function renderHeatmap(){
   const hasFlowData=kids.some(k=>k.flow!=null);
   if(metric==='flow' && !hasFlowData){
     const depth=(STATE.meta&&STATE.meta.etf_flow_depth)||0;
-    const msg=depth<2
-      ? `⚠️ <strong>Flujo ETF acumulando:</strong> FMP <code>/etf/holdings</code> requiere plan pago, así que el flujo se construye localmente con <code>scrape_etf_flows.py</code> (1 snapshot/día). Llevás <strong>${depth} día</strong> — la ventana de 5d aparece al 6º día. Mientras tanto, usá RS y CMF.`
-      : `⚠️ <strong>Flujo ETF (local):</strong> ${depth} días acumulados. Esta ventana necesita más histórico; probá una ventana menor o seguí corriendo el scraper diario.`;
+    const msg=(depth<2?tr('etf_accum_tpl'):tr('etf_local_tpl')).replace('{depth}',depth);
     elScale.innerHTML=`<span style="color:var(--amber);font-family:var(--sans);font-size:11px;line-height:1.4">${msg}</span>`;
     return;
   }
 
-  const lo=metric==='rs'?'94':metric==='cmf'?'-0.5':'salida';
-  const hi=metric==='rs'?'106':metric==='cmf'?'+0.5':'entrada';
-  elScale.innerHTML=`<span>${lo}</span><span class="hm-gradient" style="background:linear-gradient(90deg,${C.red},${C.surface2},${C.green})"></span><span>${hi}</span><span style="margin-left:10px">· ${METRIC_SUB[metric]} · tamaño = peso</span>`;
+  const lo=metric==='rs'?'94':metric==='cmf'?'-0.5':tr('flow_out');
+  const hi=metric==='rs'?'106':metric==='cmf'?'+0.5':tr('flow_in');
+  elScale.innerHTML=`<span>${lo}</span><span class="hm-gradient" style="background:linear-gradient(90deg,${C.red},${C.surface2},${C.green})"></span><span>${hi}</span><span style="margin-left:10px">· ${METRIC_SUB[metric]} · ${tr('size_weight')}</span>`;
 }
 
 document.getElementById('metricSeg').addEventListener('click',e=>{
@@ -498,20 +813,6 @@ const hexToRgb=h=>{const r=parseInt(h.slice(1,3),16),g=parseInt(h.slice(3,5),16)
 function quadColor(rs,mom){if(rs>=100&&mom>=100)return RRG_COLORS.green;if(rs>=100&&mom<100)return RRG_COLORS.amber;
   if(rs<100&&mom<100)return RRG_COLORS.red;return RRG_COLORS.blue;}
 
-let rrgApp=null;
-async function initRRGPixi(){
-  if(rrgApp)rrgApp.destroy();
-  const container=elRRG.parentElement;
-  const w=container.offsetWidth,h=400;
-  rrgApp=new PIXI.Application({width:w,height:h,backgroundColor:0x171821,antialias:true,resolution:window.devicePixelRatio});
-  elRRG.style.display='none';
-  container.style.position='relative';
-  rrgApp.canvas.style.width='100%';
-  rrgApp.canvas.style.height='400px';
-  rrgApp.canvas.style.borderRadius='8px';
-  container.appendChild(rrgApp.canvas);
-  return rrgApp;
-}
 function renderRRG(setKey){
   const data=(STATE.rrg&&STATE.rrg[setKey])||[];
   const W=560, H=420, pad=44, xmin=94, xmax=108, ymin=96, ymax=105;
@@ -533,14 +834,15 @@ function renderRRG(setKey){
   s+=`<line x1="${pad}" y1="${cy}" x2="${W-12}" y2="${cy}" stroke="${C.border}" stroke-dasharray="3 3" stroke-width="0.8"/>`;
 
   // Leyenda de tiempo (centrada arriba)
-  const timeUnit={5:'1 lectura = 1 día', 20:'1 lectura = 1 semana', 50:'1 lectura = 10 días'}[rrgPeriod]||'';
+  const timeUnit={5:tr('time_unit_5'), 20:tr('time_unit_20'), 50:tr('time_unit_50')}[rrgPeriod]||'';
   s+=`<text x="${W/2}" y="20" fill="${C.muted}" font-size="9" text-anchor="middle" font-family="monospace" opacity="0.7">▲ ${timeUnit}</text>`;
 
-  // Etiquetas de cuadrantes (clickeables)
-  s+=`<text x="${W-86}" y="50" fill="${C.green}" font-size="10" font-family="monospace" opacity="0.8" class="rrg-quad-label" data-quad="LÍDER" style="cursor:pointer">LÍDER</text>`;
-  s+=`<text x="${W-128}" y="${H-12}" fill="${C.amber}" font-size="10" font-family="monospace" opacity="0.8" class="rrg-quad-label" data-quad="DEBILITÁNDOSE" style="cursor:pointer">DEBILITÁNDOSE</text>`;
-  s+=`<text x="${pad}" y="${H-12}" fill="${C.red}" font-size="10" font-family="monospace" opacity="0.8" class="rrg-quad-label" data-quad="REZAGADO" style="cursor:pointer">REZAGADO</text>`;
-  s+=`<text x="${pad}" y="50" fill="${C.blue}" font-size="10" font-family="monospace" opacity="0.8" class="rrg-quad-label" data-quad="MEJORANDO" style="cursor:pointer">MEJORANDO</text>`;
+  // Etiquetas de cuadrantes (clickeables). data-quad usa el id canónico en español
+  // (no se traduce: setupRRGClick lo compara contra sí mismo); el texto visible sí se traduce.
+  s+=`<text x="${W-86}" y="50" fill="${C.green}" font-size="10" font-family="monospace" opacity="0.8" class="rrg-quad-label" data-quad="LÍDER" style="cursor:pointer">${tr('quad_leader')}</text>`;
+  s+=`<text x="${W-128}" y="${H-12}" fill="${C.amber}" font-size="10" font-family="monospace" opacity="0.8" class="rrg-quad-label" data-quad="DEBILITÁNDOSE" style="cursor:pointer">${tr('quad_weakening')}</text>`;
+  s+=`<text x="${pad}" y="${H-12}" fill="${C.red}" font-size="10" font-family="monospace" opacity="0.8" class="rrg-quad-label" data-quad="REZAGADO" style="cursor:pointer">${tr('quad_lagging')}</text>`;
+  s+=`<text x="${pad}" y="50" fill="${C.blue}" font-size="10" font-family="monospace" opacity="0.8" class="rrg-quad-label" data-quad="MEJORANDO" style="cursor:pointer">${tr('quad_improving')}</text>`;
 
   // Ejes labels
   s+=`<text x="${W/2}" y="${H-6}" fill="${C.muted}" font-size="10" text-anchor="middle" font-family="monospace">RS-Ratio →</text>`;
@@ -589,7 +891,7 @@ function renderRRG(setKey){
     else if(d.rs<100 && d.mom<100) quadName='REZAGADO';
     else if(d.rs<100 && d.mom>=100) quadName='MEJORANDO';
 
-    s+=`<text x="${px+6}" y="${py-4}" fill="${col}" font-size="9" font-family="monospace" font-weight="600" opacity="0.9" class="rrg-sector-label" data-sector="${d.name}" data-quad="${quadName}" style="cursor:pointer">${d.name}</text>`;
+    s+=`<text x="${px+6}" y="${py-4}" fill="${col}" font-size="9" font-family="monospace" font-weight="600" opacity="0.9" class="rrg-sector-label" data-sector="${d.name}" data-quad="${quadName}" style="cursor:pointer">${trName(d.name)}</text>`;
   });
 
   elRRG.innerHTML=s;
@@ -711,127 +1013,6 @@ function setupRRGClick(data){
   });
 }
 
-function isColorEqual(rgbStr, hexColor){
-  const hex=hexColor.replace('#','');
-  const r=parseInt(hex.substr(0,2),16);
-  const g=parseInt(hex.substr(2,2),16);
-  const b=parseInt(hex.substr(4,2),16);
-  return rgbStr.includes(`${r}`) && rgbStr.includes(`${g}`) && rgbStr.includes(`${b}`);
-}
-
-function enableRRGInteractive(W,H,pad,xmin,xmax,ymin,ymax){
-  const svg=document.getElementById('rrg');
-  if(!svg)return;
-
-  let selectedSector=null; // Estado: qué sector está seleccionado
-
-  const updateDisplay=(sectorName)=>{
-    const isSelected=sectorName!==null;
-
-    document.querySelectorAll('#rrg path[data-sector]').forEach(p=>{
-      const sector=p.getAttribute('data-sector');
-      if(isSelected){
-        p.style.opacity=sector===sectorName?'1':'0.05';
-        p.style.strokeWidth=sector===sectorName?'1.2':'0.7';
-      }else{
-        p.style.opacity='0.8';
-        p.style.strokeWidth='0.7';
-      }
-    });
-
-    document.querySelectorAll('#rrg circle[data-sector]').forEach(c=>{
-      const sector=c.getAttribute('data-sector');
-      if(isSelected){
-        c.style.opacity=sector===sectorName?'1':'0.05';
-        c.style.r=sector===sectorName?'4':'3.5';
-      }else{
-        c.style.opacity='';
-        c.style.r='';
-      }
-    });
-
-    document.querySelectorAll('#rrg text[font-size="11"]').forEach(t=>{
-      if(isSelected){
-        t.style.display=t.textContent.trim()===sectorName?'inline':'none';
-      }else{
-        t.style.display='inline';
-      }
-    });
-  };
-
-  // Click en paths y círculos para seleccionar sector
-  document.querySelectorAll('#rrg path[data-sector], #rrg circle[data-sector][r="3.5"]').forEach(el=>{
-    el.style.cursor='pointer';
-
-    el.addEventListener('mouseenter',()=>{
-      if(selectedSector===null){
-        const sector=el.getAttribute('data-sector');
-        updateDisplay(sector);
-      }
-    });
-
-    el.addEventListener('mouseleave',()=>{
-      if(selectedSector===null){
-        updateDisplay(null);
-      }
-    });
-
-    el.addEventListener('click',(e)=>{
-      e.stopPropagation();
-      const sector=el.getAttribute('data-sector');
-      if(selectedSector===sector){
-        selectedSector=null;
-      }else{
-        selectedSector=sector;
-      }
-      updateDisplay(selectedSector);
-    });
-  });
-
-  // Click en nombres de cuadrantes para seleccionar todo el cuadrante
-  document.querySelectorAll('#rrg .rrg-quad-label').forEach(label=>{
-    label.addEventListener('click',(e)=>{
-      e.stopPropagation();
-      const quadName=label.getAttribute('data-quad');
-
-      // Obtener todos los sectores en este cuadrante
-      const sectorsInQuad=new Set();
-      document.querySelectorAll('#rrg path[data-sector]').forEach(p=>{
-        const stroke=p.getAttribute('stroke');
-        // Mapear color a cuadrante
-        const quadMap={'#6dd26d':'LÍDER','#e8a847':'DEBILITÁNDOSE','#ff6b6b':'REZAGADO','#7a9ec8':'MEJORANDO'};
-        if(quadMap[stroke]===quadName){
-          sectorsInQuad.add(p.getAttribute('data-sector'));
-        }
-      });
-
-      // Resaltar todos los sectores del cuadrante
-      document.querySelectorAll('#rrg path[data-sector], #rrg circle[data-sector]').forEach(el=>{
-        const sector=el.getAttribute('data-sector');
-        const inQuad=sectorsInQuad.has(sector);
-        el.style.opacity=inQuad?'1':'0.05';
-        el.style.strokeWidth=inQuad?'1.2':'0.7';
-        if(el.tagName==='circle' && el.getAttribute('r')==='3.5'){
-          el.style.r=inQuad?'4':'3.5';
-        }
-      });
-
-      // Mostrar labels del cuadrante
-      document.querySelectorAll('#rrg text[font-size="11"]').forEach(t=>{
-        t.style.display=sectorsInQuad.has(t.textContent.trim())?'inline':'none';
-      });
-
-      selectedSector='__QUAD__'+quadName;
-    });
-  });
-
-  // Click en el fondo del SVG para deseleccionar
-  svg.addEventListener('click',()=>{
-    selectedSector=null;
-    updateDisplay(null);
-  });
-}
-
 document.getElementById('rrgSeg').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;
   rrgSet=b.dataset.set;document.querySelectorAll('#rrgSeg button').forEach(x=>x.classList.toggle('on',x===b));renderRRG(rrgSet);});
 
@@ -845,7 +1026,7 @@ function zBar(track,val,maxAbs){const pct=Math.max(-1,Math.min(1,val/maxAbs));
   track.appendChild(fill);}
 function renderBars(elId,rows,maxAbs,fmt,isCOT){const el=document.getElementById(elId);el.innerHTML='';
   rows.forEach(r=>{const row=document.createElement('div');row.className='bar-row'+(isCOT?' cot-row':'');
-    const nm=document.createElement('div');nm.className='nm';nm.textContent=r[0];
+    const nm=document.createElement('div');nm.className='nm';nm.textContent=trName(r[0]);
     const track=document.createElement('div');track.className='bar-track';
     const mid=document.createElement('div');mid.className='bar-mid';track.appendChild(mid);
     zBar(track,r[1],maxAbs);
@@ -861,7 +1042,6 @@ function addTooltip(panelHead,text){if(!panelHead.querySelector('.tooltip')){con
 function updateLEDs(){
   const notes=STATE.meta&&STATE.meta.notes||[];
   const hasNote=(text)=>notes.some(n=>n.includes(text));
-  const allTitles=Array.from(document.querySelectorAll('[class="panel-title"]'));
 
   const getDataAge=()=>{
     const generated=STATE.meta&&STATE.meta.generated;
@@ -876,16 +1056,16 @@ function updateLEDs(){
   const isStale=ageHours!==null&&ageHours>=1&&ageHours<168;
 
   const specs=[
-    {find:'Rotación',state:(isRecent?'live':isStale?'stale':'demo'),tip:'Gráfico de rotación relativa (RRG). Eje X: RS-Ratio (fuerza relativa vs benchmark). Eje Y: RS-Momentum (velocidad del cambio). Pasa mouse sobre los cuadrantes para aislar: ✓ Líder (sube momentum), Debilitándose (baja momentum), Rezagado (débil), Mejorando (recuperándose). La cola muestra las últimas 5 lecturas de trayectoria.'},
-    {find:'RORO',state:(isRecent?'live':isStale?'stale':'demo'),tip:'Régimen de riesgo (Risk-On/Risk-Off). Z-scores de ratios cíclicos vs defensivos: SPY/TLT (acciones vs bonos), Cobre/Oro (riesgo vs refugio), etc. Verde (+) = favorables al riesgo. Rojo (-) = defensivos. Rango típico ±3. Suma los componentes arriba = risk-on confirmado, abajo = risk-off.'},
-    {find:'Macro',state:(!hasNote('macro')&&isRecent?'live':!hasNote('macro')&&isStale?'stale':'demo'),tip:'Indicadores económicos en tiempo real: Tasas de referencia (Fed, BCE, BoJ), inflación (CPI), divisas (EUR/USD, USD/JPY), commodities (WTI, Brent, oro), bonos (UST 10Y), DXY, BTC. Fuentes: FRED (tasas/CPI), yfinance (precios spot), Quandl (datos). Chg = cambio desde último dato. Sparkline = histórico (últimas 12 períodos).'},
-    {find:'COT',state:'stale',tip:'Posición neta de especuladores en futuros (datos SEMANALES del CFTC, viernes). Muestra largos netos (bullish) vs cortos netos (bearish) en ES (S&P 500), CL (crudo), GC (oro), ZN (bonos 10Y), DX (dólar), BTC. Cambio = variación semana-a-semana. Extremos (>>0 o <<0) sugieren posicionamiento extremo de especuladores = posible reversión.'},
-    {find:'jerárquico',state:(isRecent?'live':isStale?'stale':'demo'),tip:'Mapa jerárquico de activos. Clickea cualquier tile para expandir. Colores: Verde = RS alcista (supera benchmark), Rojo = RS bajista, Gris = neutral. Tamaño = peso en cartera. Selecciona métrica: Fuerza rel (RS), Presión (CMF), Flujo ETF (solo para fondos). Tamaño relativo muestra importancia en la rotación.'},
-    {find:'Noticias',state:(!hasNote('news')&&isRecent?'live':!hasNote('news')&&isStale?'stale':'demo'),tip:'Últimas noticias de mercado con análisis de sentimiento: Verde = positivo (compras/optimismo), Rojo = negativo (ventas/pesimismo), Gris = neutro (informativo). Hora = cuándo se publicó. Fuente = OpenBB (intradía). Usa sentimiento para confirmar directionalidad de la rotación.'}
+    {panel:'rrg',state:(isRecent?'live':isStale?'stale':'demo'),tip:tr('led_rrg_tip')},
+    {panel:'roro',state:(isRecent?'live':isStale?'stale':'demo'),tip:tr('led_roro_tip')},
+    {panel:'macro',state:(!hasNote('macro')&&isRecent?'live':!hasNote('macro')&&isStale?'stale':'demo'),tip:tr('led_macro_tip')},
+    {panel:'cot',state:'stale',tip:tr('led_cot_tip')},
+    {panel:'heatmap',state:(isRecent?'live':isStale?'stale':'demo'),tip:tr('led_heatmap_tip')},
+    {panel:'news',state:(!hasNote('news')&&isRecent?'live':!hasNote('news')&&isStale?'stale':'demo'),tip:tr('led_news_tip')}
   ];
 
   specs.forEach(s=>{
-    const el=allTitles.find(x=>x.textContent.includes(s.find));
+    const el=document.querySelector(`[data-panel="${s.panel}"]`);
     if(el){
       const oldLED=el.querySelector('.led');
       if(oldLED)oldLED.remove();
@@ -900,43 +1080,25 @@ function updateLEDs(){
 /* ---- regime ---- */
 function renderRegime(){const r=STATE.regime||{};const col=r.color==='green'?C.green:r.color==='red'?C.red:C.amber;
   const dot=document.getElementById('regimeDot');dot.style.background=col;dot.style.boxShadow=`0 0 10px ${col}`;
-  const st=document.getElementById('regimeState');st.textContent=r.state||'—';st.style.color=col;
+  const st=document.getElementById('regimeState');st.textContent=r.state?trRiskState(r.state):'—';st.style.color=col;
   document.getElementById('regimeScore').textContent=((r.score>=0?'+':'')+(r.score!=null?r.score.toFixed(2):'—'));
 
   const bar=document.getElementById('regimeBar');
   const score=r.score||0;const clamped=Math.max(-3,Math.min(3,score));const pct=(clamped+3)/6*100;
   bar.style.left=(pct-5)+'%';bar.style.width='10%';
-  bar.textContent=(score>=0.5?'Risk-On':score<=-0.5?'Risk-Off':'Neutral');
+  bar.textContent=(score>=0.5?'Risk-On':score<=-0.5?'Risk-Off':tr('neutral'));
   bar.className='regime-bar '+(score>=0.5?'risk-on':score<=-0.5?'risk-off':'neutral');
 
   const bullish=document.getElementById('regimeBullish');
   const bearish=document.getElementById('regimeBearish');
-  if(bullish)bullish.style.textShadow=score>=0.5?`0 0 10px ${C.green}`:'none';
-  if(bearish)bearish.style.textShadow=score<=-0.5?`0 0 10px ${C.red}`:'none';
+  const isBull=score>=0.5,isBear=score<=-0.5;
+  if(bullish){bullish.style.color=isBull?C.green:C.greenDim;bullish.style.textShadow=isBull?`0 0 10px ${C.green}`:'none';}
+  if(bearish){bearish.style.color=isBear?C.red:C.redDim;bearish.style.textShadow=isBear?`0 0 10px ${C.red}`:'none';}
 }
 
 /* ---- macro ---- */
 function renderMacro(){const grid=document.getElementById('macroGrid');grid.innerHTML='';
-  const tooltips={
-    'Fed funds':'Tasa de referencia del Banco Central Estadounidense. Guía la política monetaria y el costo del crédito.',
-    'BCE depo':'Tasa de depósito del Banco Central Europeo. Indicador de política monetaria europea.',
-    'BoJ':'Tasa de referencia del Banco de Japón. Refleja la postura monetaria de Japón.',
-    'PBoC LPR 1A':'Tasa de crédito preferencial a 1 año del Banco Central de China.',
-    'EUR / USD':'Tipo de cambio euro-dólar. Indica fortaleza relativa de monedas.',
-    'USD / JPY':'Tipo de cambio dólar-yen. Refleja confianza en economía US vs Japón.',
-    'IPC EE.UU. a/a':'Índice de Precios al Consumo de USA. Mide inflación interanual.',
-    'IPC Eurozona':'Índice de Precios al Consumo de la Eurozona. Medida de inflación europea.',
-    'WTI':'Precio del barril de crudo West Texas Intermediate. Indicador de ciclo económico.',
-    'Brent':'Precio del crudo Brent. Referencia internacional de crudo.',
-    'Oro':'Precio del oro. Activo de refugio, sube con riesgo-off.',
-    'Plata':'Precio de la plata. Metal precioso, activo de ciclo.',
-    'Plata/Oro':'Relación plata/oro. Sube en ciclos alcistas, baja con riesgo-off.',
-    'UST 10Y':'Rendimiento del bono del Tesoro USA a 10 años. Guía tasas hipotecarias.',
-    'DXY':'Índice dólar. Mide fortaleza del USD vs canasta de monedas.',
-    'VIX':'Índice de volatilidad implícita (miedo). Sube en caídas de mercado.',
-    'BTC':'Bitcoin. Activo de riesgo, correlacionado con ciclo.',
-    'Gold/Silver':'Ratio oro/plata. Media histórica 60:1. Actual 76.5:1 = plata cayendo (defensiva), oro sostenido (seguro). Sube = miedo. Baja = confianza.'
-  };
+  const tooltips=MACRO_TOOLTIPS[LANG]||MACRO_TOOLTIPS.es;
 
   const findNode=(name)=>{
     const search=(node)=>{
@@ -981,7 +1143,7 @@ function renderMacro(){const grid=document.getElementById('macroGrid');grid.inne
   });
 
   macroList.forEach(m=>{const card=document.createElement('div');card.className='mcard';
-    const tip=document.createElement('div');tip.className='mcard-tooltip';tip.textContent=tooltips[m.nm]||m.nm;
+    const tip=document.createElement('div');tip.className='mcard-tooltip';tip.textContent=tooltips[m.nm]||trName(m.nm);
     const w=120,h=26,d=m.s||[];
     let pts='';
     if(d.length>0){
@@ -990,7 +1152,7 @@ function renderMacro(){const grid=document.getElementById('macroGrid');grid.inne
     }
     const col=m.dir==='up'?C.green:m.dir==='down'?C.red:C.muted;
     const svg=`<svg class="spark" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none">${pts?`<polyline points="${pts}" fill="none" stroke="${col}" stroke-width="1.4"/>`:d.length===0?'<text x="60" y="16" text-anchor="middle" fill="#8b8fa0" font-size="10">n/d</text>':''}</svg>`;
-    card.innerHTML=`<div class="mcard-top"><span class="mcard-nm">${m.nm}</span>
+    card.innerHTML=`<div class="mcard-top"><span class="mcard-nm">${trName(m.nm)}</span>
       <span class="mcard-chg ${m.dir==='up'?'up':m.dir==='down'?'down':'flat'}">${m.chg}</span></div>
       <div class="mcard-val">${m.val}</div>${svg}${tip.outerHTML}`;
     grid.appendChild(card);});}
@@ -1059,8 +1221,8 @@ function renderSpyTlt(){
           <rect x="30" y="${barY}" width="40" height="${barH}" fill="${color}" opacity="0.85" rx="3" class="bar-glow" style="color:${color}"/>
 
           <!-- Etiquetas simples -->
-          <text x="8" y="15" font-size="10" fill="var(--green)" font-weight="600">SPY</text>
-          <text x="8" y="92" font-size="10" fill="var(--red)" font-weight="600">BONOS</text>
+          <text x="8" y="15" font-size="10" fill="var(--green)" font-weight="600">${tr('label_spy')}</text>
+          <text x="8" y="92" font-size="10" fill="var(--red)" font-weight="600">${tr('label_bonds')}</text>
         </g>
       `;
     }
@@ -1072,26 +1234,25 @@ function renderSpyTlt(){
 
 /* ---- badge + foot ---- */
 function renderMeta(){const b=document.getElementById('modeBadge'),m=(STATE.meta&&STATE.meta.mode)||'demo';
-  const map={live:'live · fmp',parcial:'parcial',demo:'demo · sintético'};
-  const timeStr=lastUpdateTime?` · ${lastUpdateTime.toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'})}`:' · n/d';
+  const map={live:tr('mode_live'),parcial:tr('mode_partial'),demo:tr('mode_demo')};
+  const timeStr=lastUpdateTime?` · ${lastUpdateTime.toLocaleTimeString(LOCALE_TAG[LANG],{hour:'2-digit',minute:'2-digit'})}`:' · n/d';
   b.textContent=(map[m]||map.demo)+timeStr;
   b.className='mode-badge '+m;
   const notes=(STATE.meta&&STATE.meta.notes)||[];
   document.getElementById('foot').innerHTML=
-    `Capas y cadencia: RRG + presión CMF + ratios RORO → <code>horaria</code> · flujo implícito ETF (Δ AUM × NAV, <code>FMP /etf/holdings</code>) → <code>diaria</code> · COT → <code>semanal</code> · macro (<code>FMP econ + OpenBB/FRED</code>) → <code>diaria</code> · noticias (<code>OpenBB</code>) → <code>intradía</code>.<br>`+
-    `Disciplina: RS-Ratio y CMF se leen como <b>fuerza/presión</b> (inferencia), nunca como “entró/salió capital”. Solo <b>Flujo ETF</b> afirma dinero observado.<br>`+
-    `<span style="color:${C.muted}">${notes.join(' · ')}</span>`;}
+    tr('foot_html')+`<br><span style="color:${C.muted}">${notes.join(' · ')}</span>`;}
 
 /* ---- render all ---- */
 function renderAll(){path=[STATE.tree];renderRegime();renderRRG(rrgSet);renderHeatmap();
   renderBars('roroBars',STATE.roro||[],1.5,r=>(r[1]>=0?'+':'')+r[1].toFixed(1));
   renderBars('cotBars',STATE.cot||[],300,r=>`${r[1]}k ${r[2]>=0?'▲':'▼'}${Math.abs(r[2])}`,true);
-  renderMacro();renderNews();renderSpyTlt();renderMeta();updateLEDs();}
+  renderMacro();renderNews();renderSpyTlt();renderMeta();updateLEDs();
+  document.getElementById('rrgTailLabel').textContent=tr('rrg_tail_tpl').replace('{p}',rrgPeriod);}
 
 /* ---- Cambio de período ---- */
 async function changePeriodWithAnimation(newPeriod){
   if(newPeriod===rrgPeriod)return;
-  setLoadingStatus('Cambiando período...');
+  setLoadingStatus(tr('loading_period'));
   try{
     const res=await fetch(`/api/snapshot?period=${newPeriod}`,{cache:'no-store'});
     if(!res.ok)throw new Error(`HTTP ${res.status}`);
@@ -1105,12 +1266,12 @@ async function changePeriodWithAnimation(newPeriod){
     renderHeatmap();
     renderBars('roroBars',STATE.roro||[],1.5,r=>(r[1]>=0?'+':'')+r[1].toFixed(1));
     renderSpyTlt();
-    document.getElementById('rrgTailLabel').textContent=`— cola = análisis a ${rrgPeriod}d (últimas 5 lecturas)`;
-    setLoadingStatus('✓ Finalizado');
+    document.getElementById('rrgTailLabel').textContent=tr('rrg_tail_tpl').replace('{p}',rrgPeriod);
+    setLoadingStatus(tr('loading_done'));
     setTimeout(()=>setLoadingStatus(''),2000);
   }catch(e){
     console.error('ERROR:',e);
-    setLoadingStatus('✗ Error cambiando período');
+    setLoadingStatus(tr('loading_err_period'));
   }
 }
 
@@ -1118,7 +1279,7 @@ async function changePeriodWithAnimation(newPeriod){
 function setLoadingStatus(msg){const el=document.getElementById('loadingStatus');if(msg){el.textContent=msg;el.style.display='inline'}else{el.textContent='';el.style.display='none'}}
 
 async function load(){
-  setLoadingStatus('Cargando 5d...');
+  setLoadingStatus(tr('loading_5d'));
   try{
     const r=await fetch(`/api/snapshot?period=5`,{cache:'no-store'});
     if(r.ok){
@@ -1127,22 +1288,22 @@ async function load(){
         STATE=d;
         lastUpdateTime=new Date();
         renderAll();
-        setLoadingStatus('✓ Finalizado');
+        setLoadingStatus(tr('loading_done'));
         setTimeout(()=>setLoadingStatus(''),2000);
         fetch(`/api/snapshot?period=20`,{cache:'no-store'});
         fetch(`/api/snapshot?period=50`,{cache:'no-store'});
       }
     }
-  }catch(e){setLoadingStatus('✗ Error');}
+  }catch(e){setLoadingStatus(tr('loading_err'));}
 }
 
 let lastUpdateTime=new Date();
 setInterval(()=>{load();},3600000);
 
 /* ---- clock ---- */
-(function(){const c=document.getElementById('clock');function tick(){const d=new Date();
-  c.textContent=d.toLocaleString('es-ES',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});}
-  tick();setInterval(tick,30000);})();
+function tickClock(){const c=document.getElementById('clock');const d=new Date();
+  c.textContent=d.toLocaleString(LOCALE_TAG[LANG],{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});}
+tickClock();setInterval(tickClock,30000);
 
 /* ---- Event listeners para período ---- */
 document.getElementById('periodSeg').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;
@@ -1157,6 +1318,7 @@ document.getElementById('periodSegHM').addEventListener('click',e=>{const b=e.ta
   document.querySelectorAll('#periodSeg button').forEach(x=>x.classList.toggle('on',x.dataset.period===b.dataset.period));
   changePeriodWithAnimation(p);});
 
+applyI18n();   // aplica el idioma guardado (o español por defecto)
 renderAll();   // pinta DEMO al instante
 load();        // y reemplaza por live si el backend responde
 </script>

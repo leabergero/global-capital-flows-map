@@ -1,5 +1,5 @@
 """
-Backend Flask del Mapa de Flujos Globales.
+Backend Flask de Global Flow Matrix.
 
 Rutas:
   GET /                -> sirve el dashboard (static/index.html)
@@ -154,14 +154,14 @@ def _live_snapshot(period_days=None):
     macro_cards = safe("macro", macro.cards, demo["macro"])
     news_items = safe("news", lambda: news.headlines(6), demo["news"])
 
-    from datetime import datetime
+    from datetime import datetime, timezone
     mode = "live" if not notes else "parcial"
     if not notes:
         notes = ["Datos en vivo vía FMP" +
                  (" + OpenBB" if _openbb_available() else "") + "."]
     return {
         "meta": {"mode": mode,
-                 "generated": datetime.utcnow().isoformat(timespec="seconds") + "Z",
+                 "generated": datetime.now(timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z"),
                  "notes": notes,
                  "etf_flow_depth": etf_tracker.history_depth()},
         "regime": regime,
@@ -220,5 +220,5 @@ def health():
 
 if __name__ == "__main__":
     mode = "DEMO (sin key)" if config.DEMO_MODE else "LIVE (FMP)"
-    log.info("Arrancando Mapa de Flujos Globales en modo %s", mode)
+    log.info("Arrancando Global Flow Matrix en modo %s", mode)
     app.run(host="127.0.0.1", port=5000, debug=False)
