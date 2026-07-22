@@ -4,7 +4,9 @@
 
 **Interactive cross-asset terminal** that visualizes capital rotation and market regime in real time.
 
-**Última actualización:** 2026-06-29
+🔴 **Live demo:** [flow.quantcentral.eu](https://flow.quantcentral.eu)
+
+**Última actualización:** 2026-07-22
 
 ---
 

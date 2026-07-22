@@ -52,6 +52,26 @@ python scrape_etf_flows.py
 
 ---
 
+## Deploy (producción)
+
+Vive en **https://flow.quantcentral.eu**, en el mismo Oracle Cloud (`152.70.14.73`)
+donde corre otro proyecto del usuario (Neural, puerto `:5000`) — conviven en la
+misma VM sin compartir nada más que nginx: servicio, venv, directorio, subdominio
+y cert propios.
+
+- Server: `~/global-flow-matrix` (clonado de GitHub, `git pull` + `sudo systemctl
+  restart global-flow-matrix.service` para actualizar).
+- `app.py` lee `HOST`/`PORT` de variables de entorno (default `127.0.0.1:5000`
+  igual que local); en el server el `.service` fija `PORT=5001`.
+- `config.MAX_WORKERS` también por env (default `8`); en el server va en `3`
+  porque la VM es chica (1 OCPU/1GB + 2GB de swap) y con el default original
+  una primera carga live sin caché disparó ~40 llamadas concurrentes que
+  saturaron la VM entera (OOM-killer se llevó puesto el otro proyecto).
+- Cron diario (`flock`) corriendo `scrape_etf_flows.py` en el server — el
+  anacron local de abajo es solo para la máquina de desarrollo del usuario.
+
+---
+
 ## Estado actual (2026-06-29)
 
 ✅ **Completado**:
@@ -106,5 +126,5 @@ Separa inferencia vs observación:
 
 ---
 
-**Última actualización:** 2026-06-29
-**Estado:** ✅ Production-ready
+**Última actualización:** 2026-07-22
+**Estado:** ✅ Production-ready — deployado en https://flow.quantcentral.eu
