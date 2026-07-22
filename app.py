@@ -11,6 +11,7 @@ sección está blindada: si una llamada a FMP falla, esa sección cae a demo y s
 anota en meta.notes; el resto sigue en vivo. La key nunca llega al navegador.
 """
 import logging
+import os
 from concurrent.futures import ThreadPoolExecutor
 
 from flask import Flask, jsonify, send_from_directory, request
@@ -221,4 +222,6 @@ def health():
 if __name__ == "__main__":
     mode = "DEMO (sin key)" if config.DEMO_MODE else "LIVE (FMP)"
     log.info("Arrancando Global Flow Matrix en modo %s", mode)
-    app.run(host="127.0.0.1", port=5000, debug=False)
+    host = os.environ.get("HOST", "127.0.0.1")
+    port = int(os.environ.get("PORT", "5000"))
+    app.run(host=host, port=port, debug=False)
