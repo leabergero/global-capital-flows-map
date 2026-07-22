@@ -60,7 +60,7 @@ CFTC_SYMBOL_MAP = {
 }
 
 HTTP_TIMEOUT = 15          # segundos por request
-MAX_WORKERS = 8            # paralelismo al traer históricos
+MAX_WORKERS = int(os.environ.get("MAX_WORKERS", "8"))  # paralelismo al traer históricos
 HISTORY_DAYS = 200         # ventana de precios para RRG/CMF/RORO
 
 # --- caché por cadencia (segundos) ------------------------------------------
