@@ -19,3 +19,4 @@ yfinance>=0.2.30
 openbb>=4.3
 fredapi>=0.5.1
 quandl>=3.7.0
+apscheduler>=3.10

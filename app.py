@@ -13,6 +13,7 @@ anota en meta.notes; el resto sigue en vivo. La key nunca llega al navegador.
 import logging
 import os
 from concurrent.futures import ThreadPoolExecutor
+from apscheduler.schedulers.background import BackgroundScheduler
 
 from flask import Flask, jsonify, send_from_directory, request
 
@@ -22,6 +23,7 @@ import universe
 import demo_data
 import fmp_client as fmp
 import etf_flow_tracker as etf_tracker
+import preload_cache
 from compute import rrg, cmf, flows, roro, cot, macro, news
 
 logging.basicConfig(level=logging.INFO,
@@ -184,6 +186,45 @@ def _openbb_available():
 
 
 # ---------------------------------------------------------------------------
+# Scheduler: precarga automática (sin bloquear Flask)
+# ---------------------------------------------------------------------------
+_scheduler = None
+
+
+def _init_scheduler():
+    """Inicializa el scheduler de precarga automática (una sola vez al startup)."""
+    global _scheduler
+
+    if _scheduler is not None and _scheduler.running:
+        return  # Ya está en marcha
+
+    _scheduler = BackgroundScheduler()
+
+    # Precarga inicial: todos los símbolos (paralelizada)
+    try:
+        log.info("Precarga inicial: calentando caché...")
+        ok, fail, elapsed = preload_cache.warm_cache(verbose=True)
+    except Exception as e:
+        log.warning("Precarga inicial no completó: %s (continuando)", e)
+
+    # Job recurrente: cada 20 min durante horario de mercado (09:30 - 16:00 EST)
+    _scheduler.add_job(
+        preload_cache.job_warm_cache,
+        'cron',
+        hour='9-16',
+        minute='*/20',
+        id='preload_cache_job',
+        replace_existing=True,
+    )
+
+    try:
+        _scheduler.start()
+        log.info("Scheduler iniciado: precarga cada 20 min (09:30-16:00 EST)")
+    except Exception as e:
+        log.error("Error al iniciar scheduler: %s", e)
+
+
+# ---------------------------------------------------------------------------
 # Rutas
 # ---------------------------------------------------------------------------
 @app.route("/")
@@ -222,6 +263,13 @@ def health():
 if __name__ == "__main__":
     mode = "DEMO (sin key)" if config.DEMO_MODE else "LIVE (FMP)"
     log.info("Arrancando Global Flow Matrix en modo %s", mode)
+
+    # Inicializar scheduler de precarga (si no estamos en DEMO_MODE)
+    if not config.DEMO_MODE:
+        _init_scheduler()
+    else:
+        log.info("Scheduler deshabilitado (modo DEMO)")
+
     host = os.environ.get("HOST", "127.0.0.1")
     port = int(os.environ.get("PORT", "5000"))
     app.run(host=host, port=port, debug=False)
