@@ -217,9 +217,20 @@ def _init_scheduler():
         replace_existing=True,
     )
 
+    # Job diario: captura de flujos ETF a las 18:00 (cierre US, lunes-viernes)
+    _scheduler.add_job(
+        preload_cache.job_capture_etf_flows,
+        'cron',
+        hour=18,
+        minute=0,
+        day_of_week='0-4',  # lunes-viernes
+        id='capture_etf_flows_job',
+        replace_existing=True,
+    )
+
     try:
         _scheduler.start()
-        log.info("Scheduler iniciado: precarga cada 20 min (09:30-16:00 EST)")
+        log.info("Scheduler iniciado: precarga c/20min + captura ETF diaria a las 18:00")
     except Exception as e:
         log.error("Error al iniciar scheduler: %s", e)
 

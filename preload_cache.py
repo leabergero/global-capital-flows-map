@@ -100,3 +100,46 @@ def job_warm_cache():
             log.warning("Precarga parcial: %d fallaron (posiblemente fuera de horario o red)", fail)
     except Exception as e:
         log.error("Job precarga falló: %s", e)
+
+
+def job_capture_etf_flows():
+    """
+    Job diario: captura snapshots de flujo ETF a las 18:00 (cierre US).
+    Ejecuta scrape_etf_flows.py y acumula histórico en data/etf_flows.json.
+    Se ejecuta en background (no bloquea Flask).
+    """
+    try:
+        log.info("Iniciando captura de flujos ETF...")
+        import etf_flow_tracker as tracker
+        import universe
+
+        # Extraer símbolos ETF del árbol
+        def etf_symbols():
+            out = set()
+
+            def walk(n):
+                if n.get("etf") and n.get("symbol"):
+                    out.add(n["symbol"])
+                for c in (n.get("children") or []):
+                    walk(c)
+
+            walk(universe.TREE)
+            return sorted(out)
+
+        syms = etf_symbols()
+        captured, total = tracker.snapshot(syms)
+        depth = tracker.history_depth()
+
+        # Log del resultado
+        log.info(
+            "Captura de flujos ETF: %d/%d ETFs capturados, "
+            "histórico acumulado de %d día(s)",
+            captured, total, depth
+        )
+
+        ready = [w for w in tracker.WINDOWS if depth > w]
+        if ready:
+            log.info("Ventanas disponibles: %s", ", ".join(f"{w}d" for w in ready))
+
+    except Exception as e:
+        log.error("Job captura ETF falló: %s", e)
