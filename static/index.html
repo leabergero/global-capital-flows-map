@@ -223,9 +223,11 @@
           <button data-set="cross" data-i18n-title="rrg_cross_tip" title="8 clases de activos globales: Equity (acciones), Bonos, Commodities, Divisas, Oro, HY (bonos alto rendimiento), 10Y UST (bonos). Benchmark: ACWI (índice mundial)." data-i18n="rrg_cross_label">Cross-asset · vs ACWI</button>
         </div>
         <div class="seg" id="periodSeg" data-i18n-title="rrg_period_tip" title="Ventana temporal de análisis RRG" style="margin-left:8px">
+          <button data-period="1">1d</button>
           <button data-period="5" class="on">5d</button>
           <button data-period="20">20d</button>
           <button data-period="50">50d</button>
+          <button data-period="180">6m</button>
         </div>
       </div>
       <svg id="rrg" viewBox="0 0 560 420" role="img" aria-label="Relative Rotation Graph"></svg>
@@ -283,9 +285,11 @@
       <span class="panel-title" data-panel="heatmap" data-i18n="heatmap_title">Mapa jerárquico · toca para desglosar</span>
       <span class="panel-sub" id="hmLevel"></span>
       <div class="seg" id="periodSegHM" style="margin-left:auto" data-i18n-title="hm_period_tip" title="Período de análisis (cambios enlazados con RRG)">
+        <button data-period="1">1d</button>
         <button data-period="5" class="on">5d</button>
         <button data-period="20">20d</button>
         <button data-period="50">50d</button>
+        <button data-period="180">6m</button>
       </div>
     </div>
     <div class="hm-controls">
@@ -352,7 +356,7 @@ const I18N={
     rrg_period_tip:'Ventana temporal de análisis RRG',
     quad_leader:'Líder', quad_weakening:'Debilitándose', quad_lagging:'Rezagado', quad_improving:'Mejorando',
     rrg_tail_tpl:'— cola = análisis a {p}d (últimas 5 lecturas)',
-    time_unit_5:'1 lectura = 1 día', time_unit_20:'1 lectura = 1 semana', time_unit_50:'1 lectura = 10 días',
+    time_unit_1:'1 lectura = 1 día (intradía)', time_unit_5:'1 lectura = 1 día', time_unit_20:'1 lectura = 1 semana', time_unit_50:'1 lectura = 10 días', time_unit_180:'1 lectura = 1 mes',
     roro_title:'RORO · Componentes (z-score)',
     roro_sub_tip:'Risk-On: favorables al riesgo (ciclo, crecimiento). Risk-Off: defensivos (refugio, caída)',
     cot_title:'COT · Posición neta no-comercial',
@@ -399,7 +403,7 @@ const I18N={
     rrg_period_tip:'RRG analysis time window',
     quad_leader:'Leading', quad_weakening:'Weakening', quad_lagging:'Lagging', quad_improving:'Improving',
     rrg_tail_tpl:'— tail = {p}d analysis (last 5 readings)',
-    time_unit_5:'1 reading = 1 day', time_unit_20:'1 reading = 1 week', time_unit_50:'1 reading = 10 days',
+    time_unit_1:'1 reading = 1 day (intraday)', time_unit_5:'1 reading = 1 day', time_unit_20:'1 reading = 1 week', time_unit_50:'1 reading = 10 days', time_unit_180:'1 reading = 1 month',
     roro_title:'RORO · Components (z-score)',
     roro_sub_tip:'Risk-On: favorable for risk (cycle, growth). Risk-Off: defensive (safe haven, drawdown)',
     cot_title:'COT · Non-commercial net position',
@@ -446,7 +450,7 @@ const I18N={
     rrg_period_tip:'Zeitfenster der RRG-Analyse',
     quad_leader:'Führend', quad_weakening:'Schwächelnd', quad_lagging:'Zurückfallend', quad_improving:'Verbessernd',
     rrg_tail_tpl:'— Schweif = {p}-Tage-Analyse (letzte 5 Messwerte)',
-    time_unit_5:'1 Messwert = 1 Tag', time_unit_20:'1 Messwert = 1 Woche', time_unit_50:'1 Messwert = 10 Tage',
+    time_unit_1:'1 Messwert = 1 Tag (intraday)', time_unit_5:'1 Messwert = 1 Tag', time_unit_20:'1 Messwert = 1 Woche', time_unit_50:'1 Messwert = 10 Tage', time_unit_180:'1 Messwert = 1 Monat',
     roro_title:'RORO · Komponenten (Z-Score)',
     roro_sub_tip:'Risk-On: risikofreundlich (Zyklus, Wachstum). Risk-Off: defensiv (sicherer Hafen, Rückgang)',
     cot_title:'COT · Netto-Nichtkommerzielle Position',

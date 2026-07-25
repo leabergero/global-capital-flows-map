@@ -119,9 +119,17 @@ def _live_snapshot(period_days=None):
     demo = demo_data.snapshot("demo")  # fuente de fallback por sección
 
     # Mapear período a window/tail del RRG
+    # window = número de barras para normalización RS
+    # tail = número de lecturas en la cola del gráfico
     if period_days is None:
         period_days = 5
-    period_map = {5: (12, 5), 20: (30, 5), 50: (60, 5)}
+    period_map = {
+        1:   (5, 5),      # 1d: intradía/corto plazo
+        5:   (12, 5),     # 5d: corto plazo
+        20:  (30, 5),     # 20d: medio plazo
+        50:  (60, 5),     # 50d: largo plazo
+        180: (144, 5),    # 6m: muy largo plazo
+    }
     rrg_window, rrg_tail = period_map.get(period_days, (12, 5))
 
     _prefetch(universe.all_symbols())
@@ -246,7 +254,7 @@ def index():
 @app.route("/api/snapshot")
 def snapshot():
     period = int(request.args.get("period", 5))
-    if period not in (5, 20, 50):
+    if period not in (1, 5, 20, 50, 180):
         period = 5
 
     if config.DEMO_MODE:
