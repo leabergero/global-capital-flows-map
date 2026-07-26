@@ -32,10 +32,17 @@ python app.py                       # http://127.0.0.1:5000
 python -m py_compile *.py compute/*.py
 
 # probar el camino LIVE sin keys (yfinance es gratis, todo funciona)
-python -c "import app; print(app._live_snapshot()['meta']['mode'])"
+python -c "import snapshot_builder as sb; print(sb.live_snapshot(180)['meta']['mode'])"
 
-# forzar recálculo (borrar caché)
+# forzar recálculo de snapshots ensamblados (macro/cot/news, TTL corto)
 rm -rf cache/*.json
+
+# forzar re-siembra completa de precios (borra las bases de 6m e intradía)
+rm -f data/price_history.json data/intraday_bars.json
+
+# forzar los jobs de cron a mano, sin esperar al horario de mercado
+python -c "import preload_cache; preload_cache.job_market_close_update()"
+python -c "import preload_cache; preload_cache.job_intraday_update()"
 
 # capturar snapshot de flujo ETF (acumulativo, idempotente)
 python scrape_etf_flows.py
@@ -59,14 +66,22 @@ donde corre otro proyecto del usuario (Neural, puerto `:5000`) — conviven en l
 misma VM sin compartir nada más que nginx: servicio, venv, directorio, subdominio
 y cert propios.
 
-- Server: `~/global-flow-matrix` (clonado de GitHub, `git pull` + `sudo systemctl
-  restart global-flow-matrix.service` para actualizar).
+- Server: usuario **`ubuntu`** (no `leandro` — la imagen es Ubuntu 24.04 Minimal
+  y ese es el usuario de la instancia), repo en `/home/ubuntu/global-flow-matrix`.
+  `bash DEPLOY_ORACLE.sh` automatiza `git pull` + `pip install` + `sudo systemctl
+  restart global-flow-matrix.service` + espera activa del health-check.
 - `app.py` lee `HOST`/`PORT` de variables de entorno (default `127.0.0.1:5000`
   igual que local); en el server el `.service` fija `PORT=5001`.
 - `config.MAX_WORKERS` también por env (default `8`); en el server va en `3`
   porque la VM es chica (1 OCPU/1GB + 2GB de swap) y con el default original
   una primera carga live sin caché disparó ~40 llamadas concurrentes que
   saturaron la VM entera (OOM-killer se llevó puesto el otro proyecto).
+- El arranque del proceso (`app._init_scheduler`) siembra/actualiza los stores
+  de precios de forma SÍNCRONA antes de que Flask acepte conexiones — en un
+  primer deploy sin `data/price_history.json` esto puede tardar varios minutos
+  (~4 min visto en producción con `MAX_WORKERS=3`, 140 símbolos). Es esperado,
+  no un cuelgue; `DEPLOY_ORACLE.sh` hace polling activo del health-check en
+  vez de un `sleep` fijo por esto mismo.
 - Cron diario (`flock`) corriendo `scrape_etf_flows.py` en el server — el
   anacron local de abajo es solo para la máquina de desarrollo del usuario.
 
@@ -96,6 +111,57 @@ y cert propios.
 - Frontend vanilla JS + SVG (sin build). Auto-reload cada 1 hora.
 - Carga inteligente: 5d inmediatamente, 20d/50d en background.
 - Copyright: Leandro R. Bergero, Msc Finance & Banking BSM-UPF.
+- Fase 4: store de precios con ventana fija (320 barras diarias, 3 días de
+  velas de 15min para 1d) + cron real de mercado (cierre 17:00 ET, intradía
+  c/15min 9:30–16:00 ET) — ver sección dedicada más abajo. Las 5 ventanas
+  quedan precacheadas antes de que el usuario entre, en vez de recomputarse
+  on-demand con TTL de 1h.
+
+---
+
+## Store de precios — ventana fija + cron real de mercado (Fase 4)
+
+Reemplazó el caché de históricos por TTL relativo (expiraba cada 1h; el
+próximo usuario después de la expiración pagaba el costo de recomputar en su
+propia request). Ahora hay una base persistente por símbolo, de tamaño
+constante, actualizada por eventos reales de mercado en vez de por tiempo:
+
+- `price_store.py`: `data/price_history.json`, **320 barras de trading**
+  por símbolo (poda FIFO al agregar el cierre de hoy). 320 y no ~260 (que
+  parecía alcanzar por la validación superficial de `compute/rrg.py`) porque
+  el RRG hace un rolling DOBLE (uno para `rs_ratio`, otro para `rs_mom` sobre
+  el `diff()` de ese ratio) — el período 180d (`rrg_window=144`) necesita
+  ~2×window+tail ≈ 293 filas válidas, no `window+tail+2`. Actualizado 1x/día
+  por el job de cierre.
+- `intraday_store.py`: `data/intraday_bars.json`, velas reales de 15 min
+  (yfinance `interval="15m"`) solo para el período **1d** — antes usaba la
+  misma barra diaria recortada a 5 lecturas. Conserva los últimos **3 días
+  hábiles** (podado por fecha, no reseteado a 0 cada mañana): un solo día da
+  ~26 barras, insuficiente para el rolling apenas abre el mercado.
+- `snapshot_builder.py`: ensamblado del snapshot (`live_snapshot`,
+  `build_node`, `build_and_cache`) vive acá y no en `app.py`, para que
+  `preload_cache.py` pueda invocarlo desde los jobs de cron sin crear un
+  ciclo de imports (`app` → `preload_cache` → `app`).
+- Dos jobs en el `BackgroundScheduler` de `app.py` (timezone
+  **`America/New_York`** explícito — sin esto, el cron corre en la hora local
+  del SO del servidor, no en horario de mercado real):
+  - `job_market_close_update` (17:00 ET, 1h post-cierre NYSE, lun-vie):
+    actualiza `price_store` y recalcula+cachea `snapshot:full:{5,20,50,180}`.
+  - `job_intraday_update` (cada 15 min, 9:30–16:00 ET, lun-vie): actualiza
+    `intraday_store` y recalcula+cachea solo `snapshot:full:1`.
+- `fmp_client.historical()` es ahora un delegado fino de `price_store.get()`
+  (sin red en el hot path salvo la siembra lazy de un símbolo nunca visto);
+  `fmp_client.historical_intraday()` lee `intraday_store` con fallback a
+  `price_store` si aún no corrió el job del día (server recién levantado,
+  deploy fuera de horario de mercado).
+- yfinance a veces devuelve la barra más reciente con OHLC en `NaN` (vela del
+  día aún sin cerrar) — ambos stores la descartan explícitamente
+  (`math.isnan(close)`); sin ese filtro se cuela como un cierre inválido.
+- `get()` en ambos stores cachea el dict completo en memoria (invalidado por
+  `mtime` del archivo) — sin esto, cada llamada (docenas por snapshot: una
+  por símbolo del árbol, más RRG, más ROTO) releía y re-parseaba el JSON
+  entero del disco, dominando el tiempo de ensamblado (bajó un snapshot de
+  ~78s a ~44s en pruebas locales).
 
 ---
 
@@ -126,5 +192,5 @@ Separa inferencia vs observación:
 
 ---
 
-**Última actualización:** 2026-07-22
+**Última actualización:** 2026-07-26
 **Estado:** ✅ Production-ready — deployado en https://flow.quantcentral.eu
