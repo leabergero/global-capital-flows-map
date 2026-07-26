@@ -1,0 +1,123 @@
+╔═══════════════════════════════════════════════════════════════════╗
+║         INSTRUCCIONES: Deployment a Oracle 152.70.14.73           ║
+╚═══════════════════════════════════════════════════════════════════╝
+
+OPCIÓN 1: Usar el script (RECOMENDADO)
+═════════════════════════════════════════════════════════════════════
+
+Ejecuta en tu terminal:
+
+    bash /home/leandro/Vídeos/flujos-globales/DEPLOY_ORACLE.sh
+
+Este script automáticamente:
+  1. Conecta via SSH a Oracle
+  2. Actualiza código (git pull)
+  3. Instala dependencias (apscheduler)
+  4. Reinicia el servicio
+  5. Precalcula 6 meses de caché
+
+
+OPCIÓN 2: Comandos manuales paso a paso
+═════════════════════════════════════════════════════════════════════
+
+ssh leandro@152.70.14.73 << 'EOF'
+set -e
+
+cd ~/global-flow-matrix
+echo "1️⃣ Actualizando código..."
+git pull origin main
+
+echo "2️⃣ Instalando dependencias..."
+source .venv/bin/activate
+pip install -r requirements.txt -q
+
+echo "3️⃣ Reiniciando servicio..."
+sudo systemctl restart global-flow-matrix.service
+sleep 10
+
+echo "4️⃣ Precalculando caché..."
+python warmup_cache.py
+
+echo "✅ DEPLOYMENT COMPLETADO"
+EOF
+
+
+OPCIÓN 3: SSH interactivo
+═════════════════════════════════════════════════════════════════════
+
+ssh leandro@152.70.14.73
+
+Una vez conectado en el servidor:
+
+    cd ~/global-flow-matrix
+    git pull origin main
+    source .venv/bin/activate
+    pip install -r requirements.txt
+    sudo systemctl restart global-flow-matrix.service
+    sleep 10
+    python warmup_cache.py
+
+
+VERIFICAR DESPUÉS
+═════════════════════════════════════════════════════════════════════
+
+curl https://flow.quantcentral.eu/api/health
+
+Esperado:
+  {"ok":true,"mode":"live","openbb":true}
+
+
+ABRIR EN NAVEGADOR
+═════════════════════════════════════════════════════════════════════
+
+https://flow.quantcentral.eu
+
+Verás:
+  - RRG interactivo
+  - Botones: 1d | 5d | 20d | 50d | 6m
+  - Cambio de ventana instantáneo (<3ms)
+
+
+TROUBLESHOOTING
+═════════════════════════════════════════════════════════════════════
+
+Si obtienes "Permission denied (publickey)":
+  - Verifica que SSH keys están configuradas correctamente
+  - Intenta: ssh -vvv leandro@152.70.14.73 (para debug)
+
+Si pip install falla:
+  - Asegúrate que .venv está activado
+  - Prueba: source .venv/bin/activate
+
+Si systemctl falla:
+  - Asegúrate que tienes permisos sudo
+  - Prueba sin sudo para verificar status
+
+
+LOGS EN VIVO (en servidor)
+═════════════════════════════════════════════════════════════════════
+
+sudo journalctl -u global-flow-matrix.service -f
+
+Deberías ver cada 20 minutos:
+  INFO preload: Precarga completada: 140 OK
+
+Y cada 18:00:
+  INFO preload: Captura de flujos ETF: 42/42 ETFs
+
+
+═════════════════════════════════════════════════════════════════════
+
+COMMIT HISTORY (qué se deployará)
+
+7a5334a - Agregar warmup_cache.py + DEPLOYMENT.md
+a3fd320 - Fase 3: Nuevas ventanas temporales (1d + 6m)
+1e41ed1 - Fase 2: Captura automática ETF a las 18:00
+a3c593b - Fase 1: Precarga automática cada 20 min
+
+═════════════════════════════════════════════════════════════════════
+
+TIEMPO ESTIMADO: 5 minutos
+DOWNTIME: ~5 segundos (durante restart)
+
+═════════════════════════════════════════════════════════════════════

@@ -8,11 +8,12 @@ Históricos: yfinance (gratis, no requiere key). El resto: FMP.
 """
 import logging
 import requests
-from datetime import datetime, timedelta
 
 import yfinance
 import config
 import cache
+import price_store
+import intraday_store
 
 log = logging.getLogger("fmp")
 
@@ -54,52 +55,24 @@ def historical(symbol: str, days: int = None):
     Devuelve lista ascendente de barras OHLCV:
     [{date, open, high, low, close, volume}, ...]  o []  si falla.
 
-    Usa yfinance (gratis) en lugar de FMP (que requiere plan Pro para v3 legacy).
+    Delega en price_store: base persistente de ventana fija (260 barras),
+    actualizada 1x/día por el job de cierre de mercado. `days` se ignora (ya
+    no hay recorte por TTL; queda solo por compatibilidad de firma).
     """
-    days = days or config.HISTORY_DAYS
-    cache_key = f"hist:{symbol}:{days}"
+    return price_store.get(symbol)
 
-    cached = cache.get(cache_key)
-    if cached is not None:
-        return cached
 
-    try:
-        end_date = datetime.now()
-        start_date = end_date - timedelta(days=days)
-
-        # Convertir símbolo FMP -> yfinance (cripto/forex/commodities/índices)
-        yf_symbol = config.YFINANCE_SYMBOL_MAP.get(symbol, symbol)
-        ticker = yfinance.Ticker(yf_symbol)
-        df = ticker.history(start=start_date, end=end_date)
-
-        if df.empty:
-            log.warning("yfinance vacío %s", symbol)
-            return []
-
-        out = []
-        for date_idx, row in df.iterrows():
-            try:
-                out.append({
-                    "date": date_idx.strftime("%Y-%m-%d"),
-                    "open": float(row.get("Open", row.get("Close", 0)) or 0),
-                    "high": float(row.get("High", 0) or 0),
-                    "low": float(row.get("Low", 0) or 0),
-                    "close": float(row["Close"]),
-                    "volume": float(row.get("Volume", 0) or 0),
-                })
-            except (KeyError, TypeError, ValueError):
-                continue
-
-        if out:
-            cache.set(cache_key, out, config.TTL.get("price", 3600))
-            log.debug("yfinance OK %s (%d barras)", symbol, len(out))
-        else:
-            log.warning("yfinance sin barras válidas %s", symbol)
-
-        return out
-    except Exception as e:
-        log.warning("yfinance FAIL %s :: %s", symbol, e)
-        return []
+def historical_intraday(symbol: str):
+    """
+    Velas de 15 min del store intradía (solo para el período "1d"). Si aún
+    no hay datos (server recién levantado, o antes del primer job del día),
+    cae a las barras diarias como degradación aceptable.
+    """
+    bars = intraday_store.get(symbol)
+    if bars:
+        return bars
+    log.debug("intraday vacío %s -> fallback a store diario", symbol)
+    return price_store.get(symbol)
 
 
 def quote(symbol: str):

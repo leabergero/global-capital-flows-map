@@ -1,22 +1,26 @@
 """
-Precarga automática de caché — mantiene el servidor con datos frescos.
+Jobs de actualización de mercado — mantienen el servidor con datos frescos
+SIN depender de TTL relativo.
 
 El flujo:
-  1. Startup: precarga paralela de TODOS los símbolos (ETFs + sectores + macro)
-  2. Background: cada 20 min (durante horario de mercado) refresca históricos
-  3. Resultado: /api/snapshot sirve DESDE CACHÉ (sin latencia de red)
+  1. Job de cierre (17:00 ET, 1h post-cierre NYSE, lun-vie): actualiza el
+     store diario de precios (price_store) para TODOS los símbolos y
+     recalcula+cachea los snapshots de 5d/20d/50d/180d.
+  2. Job intradía (cada 15 min, 9:30-16:00 ET, lun-vie): actualiza el store
+     de velas de 15 min (intraday_store) y recalcula+cachea el snapshot 1d.
+  3. Resultado: /api/snapshot SIEMPRE sirve desde caché ya caliente — nadie
+     paga el costo de recomputar en su propia request, salvo que un job haya
+     fallado por completo (fallback síncrono como red de seguridad).
 
-Sin esto, cada cambio de ventana temporal (5d → 20d → 50d) y cada usuario
-nuevo genera llamadas síncronas a FMP en vivo, saturando la VM pequeña.
+Sin esto, el TTL relativo de 1h dejaba que el próximo usuario después de cada
+expiración pagara la recomputación, saturando la VM pequeña bajo carga.
 """
 import logging
-import time
-from concurrent.futures import ThreadPoolExecutor
-from datetime import datetime
 
 import config
 import universe
-import fmp_client as fmp
+import price_store
+import intraday_store
 
 log = logging.getLogger("preload")
 
@@ -47,59 +51,47 @@ def all_symbols_with_macro():
     return sorted(symbols)
 
 
-def warm_cache(verbose=False):
+def job_market_close_update():
     """
-    Precarga paralela de históricos (5d + 200d para RRG/CMF/RORO).
-    Retorna (count_ok, count_fail, elapsed_sec).
+    Job de cierre de mercado: 17:00 ET, lunes a viernes (1h post-cierre NYSE).
+    Actualiza el store diario de precios para TODOS los símbolos y recalcula
+    + cachea los snapshots de 5d/20d/50d/180d (todos derivan de la misma
+    base). Se ejecuta en background (no bloquea Flask), salvo la llamada
+    inicial en el startup del proceso.
     """
-    symbols = all_symbols_with_macro()
-    total = len(symbols)
-
-    if verbose:
-        log.info("Iniciando precarga: %d símbolos", total)
-
-    start = time.time()
-    ok = fail = 0
-
+    import snapshot_builder
     try:
-        with ThreadPoolExecutor(max_workers=config.MAX_WORKERS) as ex:
-            futures = {ex.submit(fmp.historical, s): s for s in symbols}
+        symbols = all_symbols_with_macro()
+        ok, fail, elapsed = price_store.update_today(symbols)
+        log.info("Cierre diario: %d OK, %d fail en %.1fs", ok, fail, elapsed)
 
-            for future in futures:
-                try:
-                    bars = future.result(timeout=30)
-                    if bars is not None and len(bars) > 0:
-                        ok += 1
-                    else:
-                        fail += 1
-                except Exception as e:
-                    fail += 1
-                    if verbose:
-                        sym = futures[future]
-                        log.debug("Error precargando %s: %s", sym, e)
+        for period in (5, 20, 50, 180):
+            try:
+                snapshot_builder.build_and_cache(period)
+            except Exception as e:
+                log.error("No se pudo recalcular snapshot %sd: %s", period, e)
     except Exception as e:
-        log.error("Precarga abortada: %s", e)
-        return 0, total, time.time() - start
-
-    elapsed = time.time() - start
-
-    if verbose:
-        log.info("Precarga completada: %d OK, %d failed en %.1f seg", ok, fail, elapsed)
-
-    return ok, fail, elapsed
+        log.error("Job cierre diario falló: %s", e)
 
 
-def job_warm_cache():
+def job_intraday_update():
     """
-    Job recurrente: precarga cada 20 min sin bloquear.
-    Se ejecuta en background (no afecta a las rutas Flask).
+    Job intradía: cada 15 min entre 9:30 y 16:00 ET, lunes a viernes.
+    Actualiza el store de velas de 15 min y recalcula + cachea solo el
+    snapshot de 1d.
     """
+    import snapshot_builder
     try:
-        ok, fail, elapsed = warm_cache(verbose=True)
-        if fail > 0:
-            log.warning("Precarga parcial: %d fallaron (posiblemente fuera de horario o red)", fail)
+        symbols = all_symbols_with_macro()
+        ok, fail, elapsed = intraday_store.update(symbols)
+        log.info("Intradía: %d OK, %d fail en %.1fs", ok, fail, elapsed)
+
+        try:
+            snapshot_builder.build_and_cache(1)
+        except Exception as e:
+            log.error("No se pudo recalcular snapshot 1d: %s", e)
     except Exception as e:
-        log.error("Job precarga falló: %s", e)
+        log.error("Job intradía falló: %s", e)
 
 
 def job_capture_etf_flows():

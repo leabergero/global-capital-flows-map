@@ -9,22 +9,22 @@ Rutas:
 Filosofía: si no hay key -> DEMO. Si hay key, se construye en vivo pero CADA
 sección está blindada: si una llamada a FMP falla, esa sección cae a demo y se
 anota en meta.notes; el resto sigue en vivo. La key nunca llega al navegador.
+
+El ensamblado del snapshot vive en snapshot_builder.py (no acá) para que los
+jobs de cron en preload_cache.py puedan invocarlo sin crear un ciclo de
+imports (app.py -> preload_cache.py -> app.py).
 """
 import logging
 import os
-from concurrent.futures import ThreadPoolExecutor
 from apscheduler.schedulers.background import BackgroundScheduler
 
 from flask import Flask, jsonify, send_from_directory, request
 
 import config
 import cache
-import universe
 import demo_data
-import fmp_client as fmp
-import etf_flow_tracker as etf_tracker
 import preload_cache
-from compute import rrg, cmf, flows, roro, cot, macro, news
+import snapshot_builder
 
 logging.basicConfig(level=logging.INFO,
                     format="%(asctime)s %(levelname)s %(name)s: %(message)s")
@@ -34,194 +34,52 @@ app = Flask(__name__, static_folder="static", static_url_path="")
 
 
 # ---------------------------------------------------------------------------
-# Prefetch de históricos (paraleliza la primera carga; luego pega a caché disco)
-# ---------------------------------------------------------------------------
-def _prefetch(symbols):
-    with ThreadPoolExecutor(max_workers=config.MAX_WORKERS) as ex:
-        list(ex.map(lambda s: fmp.historical(s), symbols))
-
-
-def _lookup(sym):
-    return fmp.historical(sym)
-
-
-# ---------------------------------------------------------------------------
-# Árbol en vivo
-# ---------------------------------------------------------------------------
-def _agg(children, key):
-    """Promedio ponderado por w de una métrica entre hijos (ignora None)."""
-    num = den = 0.0
-    for c in children:
-        v = c.get(key)
-        if v is None:
-            continue
-        w = c.get("w", 1) or 1
-        num += v * w
-        den += w
-    return round(num / den, 2) if den else None
-
-
-def _build_node(node, bench_bars, rrg_window=None, rrg_tail=None, flow_days=5):
-    if rrg_window is None:
-        rrg_window = config.RRG_WINDOW
-    if rrg_tail is None:
-        rrg_tail = config.RRG_TAIL
-
-    kids = node.get("children")
-    built = [_build_node(c, bench_bars, rrg_window, rrg_tail, flow_days) for c in kids] if kids else None
-
-    rs = mom = cmf_v = None
-    flow_m = None                       # flujo en MILLONES de USD (unidad única)
-    sym = node.get("symbol")
-    if sym:
-        bars = _lookup(sym)
-        pt = rrg.point(bars, bench_bars, window=rrg_window, tail=rrg_tail)
-        if pt:
-            rs, mom = pt["rs"], pt["mom"]
-        cmf_v = cmf.cmf(bars)
-        if node.get("etf"):
-            raw = flows.implied_flow(sym, bars)   # USD crudo (FMP, premium)
-            if raw is None:
-                # Fallback gratuito: histórico acumulado por scrape_etf_flows.py
-                raw = etf_tracker.flow_window(sym, flow_days)
-            if raw is not None:
-                flow_m = round(raw / 1e6, 1)      # -> millones (una sola vez)
-
-    # completar huecos con la agregación de hijos
-    if built:
-        if rs is None:
-            rs = _agg(built, "rs")
-        if mom is None:
-            mom = _agg(built, "mom")
-        if cmf_v is None:
-            cmf_v = _agg(built, "cmf")
-        if flow_m is None:
-            # los hijos ya vienen en millones: se suman directo, sin re-dividir
-            child_flows = [c["flow"] for c in built if c.get("flow") is not None]
-            flow_m = round(sum(child_flows), 1) if child_flows else None
-
-    return {
-        "name": node["name"],
-        "rs": rs if rs is not None else 100.0,
-        "mom": mom if mom is not None else 100.0,
-        "cmf": cmf_v if cmf_v is not None else 0.0,
-        "flow": flow_m,                 # ya en millones de USD (o None)
-        "w": node.get("w", 1),
-        "children": built,
-    }
-
-
-# ---------------------------------------------------------------------------
-# Snapshot en vivo, sección por sección y blindado
-# ---------------------------------------------------------------------------
-def _live_snapshot(period_days=None):
-    notes = []
-    demo = demo_data.snapshot("demo")  # fuente de fallback por sección
-
-    # Mapear período a window/tail del RRG
-    # window = número de barras para normalización RS
-    # tail = número de lecturas en la cola del gráfico
-    if period_days is None:
-        period_days = 5
-    period_map = {
-        1:   (5, 5),      # 1d: intradía/corto plazo
-        5:   (12, 5),     # 5d: corto plazo
-        20:  (30, 5),     # 20d: medio plazo
-        50:  (60, 5),     # 50d: largo plazo
-        180: (144, 5),    # 6m: muy largo plazo
-    }
-    rrg_window, rrg_tail = period_map.get(period_days, (12, 5))
-
-    _prefetch(universe.all_symbols())
-    bench_eq = _lookup(config.BENCH_EQUITY)
-    bench_cross = _lookup(config.BENCH_CROSS) or bench_eq
-
-    def safe(section, fn, fallback):
-        try:
-            val = fn()
-            if val in (None, [], {}):
-                raise ValueError("vacío")
-            return val
-        except Exception as e:
-            log.warning("sección '%s' -> demo :: %s", section, e)
-            notes.append(f"{section}: sin datos en vivo (fallback demo)")
-            return fallback
-
-    tree = safe("tree", lambda: _build_node(universe.TREE, bench_eq, rrg_window, rrg_tail, period_days), demo["tree"])
-    rrg_sec = safe("rrg.sectores",
-                   lambda: rrg.dataset(universe.RRG_SECTORES, bench_eq, _lookup,
-                                      window=rrg_window, tail=rrg_tail),
-                   demo["rrg"]["sectores"])
-    rrg_cross = safe("rrg.cross",
-                     lambda: rrg.dataset(universe.RRG_CROSS, bench_cross, _lookup,
-                                        window=rrg_window, tail=rrg_tail),
-                     demo["rrg"]["cross"])
-    roro_rows, comp = safe("roro", lambda: roro.components(_lookup, window=rrg_window),
-                           (demo["roro"], None))
-    if comp is None:
-        comp = round(sum(r[1] for r in roro_rows) / len(roro_rows), 2) if roro_rows else 0.0
-    regime = roro.regime(comp)
-    cot_tbl = safe("cot", lambda: cot.table(config.COT_SYMBOLS), demo["cot"])
-    macro_cards = safe("macro", macro.cards, demo["macro"])
-    news_items = safe("news", lambda: news.headlines(6), demo["news"])
-
-    from datetime import datetime, timezone
-    mode = "live" if not notes else "parcial"
-    if not notes:
-        notes = ["Datos en vivo vía FMP" +
-                 (" + OpenBB" if _openbb_available() else "") + "."]
-    return {
-        "meta": {"mode": mode,
-                 "generated": datetime.now(timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z"),
-                 "notes": notes,
-                 "etf_flow_depth": etf_tracker.history_depth()},
-        "regime": regime,
-        "rrg": {"sectores": rrg_sec, "cross": rrg_cross},
-        "roro": roro_rows,
-        "cot": cot_tbl,
-        "tree": tree,
-        "macro": macro_cards,
-        "news": news_items,
-    }
-
-
-def _openbb_available():
-    try:
-        import openbb  # noqa: F401
-        return True
-    except Exception:
-        return False
-
-
-# ---------------------------------------------------------------------------
-# Scheduler: precarga automática (sin bloquear Flask)
+# Scheduler: jobs de mercado deterministas (sin bloquear Flask)
 # ---------------------------------------------------------------------------
 _scheduler = None
 
 
 def _init_scheduler():
-    """Inicializa el scheduler de precarga automática (una sola vez al startup)."""
+    """Inicializa el scheduler de jobs de mercado (una sola vez al startup)."""
     global _scheduler
 
     if _scheduler is not None and _scheduler.running:
         return  # Ya está en marcha
 
-    _scheduler = BackgroundScheduler()
+    # Timezone explícito: sin esto, BackgroundScheduler usa la hora local del
+    # SO del servidor (en Oracle, probablemente UTC), y los horarios de
+    # mercado de abajo quedarían desalineados.
+    _scheduler = BackgroundScheduler(timezone="America/New_York")
 
-    # Precarga inicial: todos los símbolos (paralelizada)
+    # Precarga inicial síncrona (mismo comportamiento de bloqueo al boot que
+    # existía antes): siembra/actualiza ambos stores para que el primer
+    # request ya tenga caché caliente.
     try:
-        log.info("Precarga inicial: calentando caché...")
-        ok, fail, elapsed = preload_cache.warm_cache(verbose=True)
+        log.info("Precarga inicial: actualizando stores de precios...")
+        preload_cache.job_market_close_update()
+        preload_cache.job_intraday_update()
     except Exception as e:
         log.warning("Precarga inicial no completó: %s (continuando)", e)
 
-    # Job recurrente: cada 20 min durante horario de mercado (09:30 - 16:00 EST)
+    # Job de cierre: 17:00 ET, 1h post-cierre NYSE (16:00 ET), lunes-viernes.
     _scheduler.add_job(
-        preload_cache.job_warm_cache,
+        preload_cache.job_market_close_update,
+        'cron',
+        hour=17,
+        minute=0,
+        day_of_week='0-4',
+        id='market_close_update_job',
+        replace_existing=True,
+    )
+
+    # Job intradía: cada 15 min en horario de mercado, lunes-viernes.
+    _scheduler.add_job(
+        preload_cache.job_intraday_update,
         'cron',
         hour='9-16',
-        minute='*/20',
-        id='preload_cache_job',
+        minute='*/15',
+        day_of_week='0-4',
+        id='intraday_update_job',
         replace_existing=True,
     )
 
@@ -238,7 +96,7 @@ def _init_scheduler():
 
     try:
         _scheduler.start()
-        log.info("Scheduler iniciado: precarga c/20min + captura ETF diaria a las 18:00")
+        log.info("Scheduler iniciado: cierre 17:00 ET + intradía c/15min + captura ETF 18:00 ET")
     except Exception as e:
         log.error("Error al iniciar scheduler: %s", e)
 
@@ -267,8 +125,9 @@ def snapshot():
     cached = cache.get(cache_key)
     if cached is not None:
         return jsonify(cached)
-    data = _live_snapshot(period_days=period)
-    cache.set(cache_key, data, config.TTL["snapshot"])
+    # Fallback síncrono (red de seguridad): en régimen normal, los jobs de
+    # cron ya dejaron esto cacheado antes de que un usuario lo pida.
+    data = snapshot_builder.build_and_cache(period)
     return jsonify(data)
 
 
@@ -276,14 +135,14 @@ def snapshot():
 def health():
     return jsonify({"ok": True,
                     "mode": "demo" if config.DEMO_MODE else "live",
-                    "openbb": _openbb_available()})
+                    "openbb": snapshot_builder._openbb_available()})
 
 
 if __name__ == "__main__":
     mode = "DEMO (sin key)" if config.DEMO_MODE else "LIVE (FMP)"
     log.info("Arrancando Global Flow Matrix en modo %s", mode)
 
-    # Inicializar scheduler de precarga (si no estamos en DEMO_MODE)
+    # Inicializar scheduler de jobs de mercado (si no estamos en DEMO_MODE)
     if not config.DEMO_MODE:
         _init_scheduler()
     else:

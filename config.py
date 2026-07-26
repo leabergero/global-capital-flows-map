@@ -61,16 +61,36 @@ CFTC_SYMBOL_MAP = {
 
 HTTP_TIMEOUT = 15          # segundos por request
 MAX_WORKERS = int(os.environ.get("MAX_WORKERS", "8"))  # paralelismo al traer históricos
-HISTORY_DAYS = 200         # ventana de precios para RRG/CMF/RORO
+HISTORY_DAYS = 200         # ventana de precios para RRG/CMF/RORO (legado, ver price_store.py)
+
+# --- store de precios diario (ventana fija, actualizado por cron de cierre) -
+# Reemplaza el caché por TTL de históricos: en vez de expirar por tiempo, se
+# actualiza 1x/día (job de cierre de mercado) y mantiene tamaño constante.
+DAILY_STORE_BARS = 320        # barras de trading a conservar. compute/rrg.py hace
+                               # un rolling DOBLE (uno para rs_ratio, otro para
+                               # rs_mom sobre el diff de ese ratio) -> el período
+                               # 180d (rrg_window=144) necesita ~2*window+tail=293
+                               # filas válidas, no window+tail+2. 320 da margen
+                               # ante feriados/símbolos con huecos.
+DAILY_STORE_SEED_DAYS = 470    # días calendario a pedir a yfinance al sembrar
+                               # un símbolo nuevo (~320 hábiles + margen feriados).
+
+# --- store intradía (velas de 15 min, período "1d") -------------------------
+INTRADAY_INTERVAL = "15m"
+INTRADAY_FETCH_PERIOD = "5d"   # margen para fines de semana largos/feriados
+INTRADAY_KEEP_DAYS = 3         # días de mercado a conservar (podado por fecha)
+RRG_INTRADAY_WINDOW = 8        # ventana RRG para period=1 sobre velas de 15m
+RRG_INTRADAY_TAIL = 8          # cola RRG para period=1
 
 # --- caché por cadencia (segundos) ------------------------------------------
 TTL = {
-    "price":  60 * 60,          # históricos / RRG / CMF / RORO -> horaria
+    "price":  60 * 60,          # legado (ya no lo usa el path de históricos)
     "flows":  60 * 60 * 24,     # flujo implícito ETF          -> diaria
     "cot":    60 * 60 * 24 * 7, # COT                          -> semanal
     "macro":  60 * 60 * 24,     # macro                        -> diaria
     "news":   60 * 15,          # noticias                     -> intradía
-    "snapshot": 60 * 60,        # ensamblado completo
+    "snapshot": 60 * 60 * 24,   # red de seguridad: la frescura real la dan los
+                                 # jobs de cierre/intradía, no este TTL.
 }
 
 # --- mapeo de símbolos para yfinance (quote + histórico) --------------------
