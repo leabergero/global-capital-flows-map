@@ -4,7 +4,7 @@
 # Ejecutar: bash DEPLOY_ORACLE.sh
 # O: ./DEPLOY_ORACLE.sh
 
-HOST="leandro@152.70.14.73"
+HOST="ubuntu@152.70.14.73"
 SSH_KEY="${HOME}/.ssh/oracle_mapa.key"
 
 echo "╔════════════════════════════════════════════════════════════╗"
@@ -37,7 +37,7 @@ echo "════════════════════════�
 echo ""
 
 echo "1️⃣  Actualizando código desde GitHub..."
-cd ~/global-flow-matrix
+cd /home/ubuntu/global-flow-matrix
 git pull origin main
 echo "✅ Completado"
 echo ""
@@ -58,13 +58,18 @@ sleep 3
 echo "✅ Servicio reiniciado"
 echo ""
 
-echo "4️⃣  Esperando startup (puede tardar más en el primer deploy, ver nota arriba)..."
-sleep 10
-echo "✅ Listo"
+echo "4️⃣  Esperando startup (puede tardar varios minutos en el primer deploy, ver nota arriba)..."
+for i in $(seq 1 60); do
+    if curl -sf http://127.0.0.1:5001/api/health > /dev/null 2>&1; then
+        echo "✅ Servidor respondiendo (intento $i)"
+        break
+    fi
+    sleep 10
+done
 echo ""
 
 echo "5️⃣  Verificando estado..."
-curl -s http://127.0.0.1:5001/api/health
+curl -s http://127.0.0.1:5001/api/health || echo "⚠️  Todavía sin responder tras 10 min — revisar journalctl -u global-flow-matrix.service"
 echo ""
 
 echo "6️⃣  Precalentando caché de snapshots ensamblados..."
