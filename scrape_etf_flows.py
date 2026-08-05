@@ -31,14 +31,17 @@ def etf_symbols():
 
 if __name__ == "__main__":
     syms = etf_symbols()
-    captured, total = tracker.snapshot(syms)
-    depth = tracker.history_depth()
-    print(f"Snapshot tomado: {captured}/{total} ETFs capturados.")
-    print(f"Histórico acumulado: {depth} día(s).")
-    ready = [w for w in tracker.WINDOWS if depth > w]
-    if ready:
-        print(f"Ventanas disponibles: {', '.join(f'{w}d' for w in ready)}.")
-    else:
-        nxt = min(tracker.WINDOWS)
-        print(f"Aún sin ventanas completas (faltan {nxt + 1 - depth} día/s "
-              f"para la primera de {nxt}d).")
+    captured, total, backfilled = tracker.snapshot(syms)
+    cov = tracker.coverage()
+    print(f"Snapshot tomado: {captured}/{total} ETFs capturados "
+          f"({backfilled} con histórico completo de SSGA).")
+
+    # Los SPDR llegan con histórico; el resto se acumula de a un día, así que
+    # lo útil es cuántos símbolos tienen ya cada ventana, no la profundidad máx.
+    for w in tracker.WINDOWS:
+        listos = [s for s, n in cov.items() if n > w]
+        print(f"  ventana {w:>3}d: {len(listos):>2}/{total} símbolos")
+    faltan = sorted(s for s, n in cov.items() if n <= min(tracker.WINDOWS))
+    if faltan:
+        print(f"Acumulando hacia adelante (sin histórico gratuito): "
+              f"{', '.join(faltan)}")

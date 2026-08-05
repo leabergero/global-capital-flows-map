@@ -39,11 +39,13 @@ durante semanas. Hoy la fuente primaria es stockanalysis.com (shares reales,
 serie con esa firma de dato muerto y devuelve None en vez de un cero o un
 ruido que en pantalla se lee como señal.
 """
+import io
 import json
 import os
 import re
 from datetime import date
 
+import openpyxl
 import requests
 import yfinance as yf
 
@@ -78,6 +80,57 @@ def _save(store):
 # ---------------------------------------------------------------------------
 # Captura de un snapshot diario
 # ---------------------------------------------------------------------------
+SSGA_URL = ("https://www.ssga.com/library-content/products/fund-data/etfs/us/"
+            "navhist-us-en-{}.xlsx")
+# Cuántos snapshots conservar por símbolo. La ventana más larga que pide el
+# frontend es la de 180d (`build_node` pasa el período como `flow_days`), que
+# necesita 181 snapshots; 190 deja margen para feriados. SSGA sirve ~22 años
+# por fondo: guardarlos sería inflar el JSON con datos que la herramienta no
+# mira nunca — no vamos más atrás de 6 meses de mercado.
+MAX_KEEP = 190
+_MESES = {m: i for i, m in enumerate(
+    "Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec".split(), 1)}
+
+
+def _fetch_ssga_history(symbol):
+    """
+    Serie histórica COMPLETA [{date, shares, nav, src}] de un SPDR, o [].
+
+    SSGA publica el NAV history diario con `Shares Outstanding` real —
+    ~22 años por fondo, la única fuente gratuita que encontramos con
+    HISTÓRICO (stockanalysis solo da el corte de hoy, e iShares bloquea la
+    descarga con un bot-check que devuelve HTML con Content-Type text/csv).
+    Cubre 16/43 del universo: SPY, los 11 sectores XLx, GLD, KBE, KIE, XOP.
+    """
+    try:
+        r = requests.get(SSGA_URL.format(symbol.lower()),
+                         headers={"User-Agent": SA_UA}, timeout=45)
+        if r.status_code != 200 or "spreadsheet" not in r.headers.get("Content-Type", ""):
+            return []                       # no es SPDR: la respuesta es el HTML del 404
+        ws = openpyxl.load_workbook(io.BytesIO(r.content), read_only=True).active
+        rows = list(ws.iter_rows(values_only=True))
+    except Exception:
+        return []
+
+    out = []
+    for row in rows:
+        # cabecera y filas de metadata (Fund Name, Ticker Symbol, vacías)
+        if not row or len(row) < 3 or not isinstance(row[0], str):
+            continue
+        try:
+            d, mes, a = row[0].split("-")           # '04-Aug-2026'
+            fecha = f"{int(a):04d}-{_MESES[mes]:02d}-{int(d):02d}"
+        except (ValueError, KeyError):
+            continue
+        nav, shares = row[1], row[2]
+        if not isinstance(nav, (int, float)) or not isinstance(shares, (int, float)):
+            continue
+        out.append({"date": fecha, "shares": round(shares),
+                    "nav": round(float(nav), 4), "src": "ssga"})
+    out.sort(key=lambda r_: r_["date"])             # el xlsx viene descendente
+    return out
+
+
 SA_URL = "https://stockanalysis.com/etf/{}/__data.json"
 SA_UA = ("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) "
          "Chrome/120.0.0.0 Safari/537.36")
@@ -167,12 +220,25 @@ def snapshot(symbols, today=None):
     """
     Toma un snapshot de hoy para cada símbolo y lo agrega al histórico.
     Idempotente: si ya hay snapshot de hoy, lo reemplaza (no duplica).
-    Devuelve (capturados, total).
+
+    Para los SPDR reemplaza la serie entera con el navhist de SSGA en vez de
+    ir agregando un punto por día: la fuente es autoritativa y trae el
+    histórico completo, así que la primera corrida ya deja 5d/20d/50d
+    disponibles (backfill) y las siguientes corrigen cualquier hueco por sí
+    solas. Para el resto no hay histórico gratuito: se acumula hacia adelante.
+
+    Devuelve (capturados, total, backfilled).
     """
     today = today or date.today().isoformat()
     store = _load()
-    captured = 0
+    captured = backfilled = 0
     for sym in symbols:
+        hist = _fetch_ssga_history(sym)
+        if len(hist) >= 2:
+            store[sym] = hist[-MAX_KEEP:]
+            captured += 1
+            backfilled += 1
+            continue
         shares, nav, src = _fetch(sym)
         if shares is None:
             continue
@@ -181,9 +247,10 @@ def snapshot(symbols, today=None):
         series.append({"date": today, "shares": shares,
                        "nav": round(nav, 4), "src": src})
         series.sort(key=lambda s: s["date"])
+        del series[:-MAX_KEEP]
         captured += 1
     _save(store)
-    return captured, len(symbols)
+    return captured, len(symbols), backfilled
 
 
 # ---------------------------------------------------------------------------
@@ -201,8 +268,29 @@ def _daily_flows(series):
     for prev, cur in zip(series, series[1:]):
         if prev.get("src") != cur.get("src"):
             continue
+        if _es_split(prev, cur):
+            continue
         out.append((cur["shares"] - prev["shares"]) * cur["nav"])
     return out
+
+
+def _es_split(prev, cur):
+    """
+    ¿El salto de shares es un split y no dinero?
+
+    En un split las unidades se multiplican y el NAV se divide por el mismo
+    factor: el AUM queda igual, no entró ni salió un dólar. Visto en XLK el
+    2025-12-05 (shares +99,7%, NAV −49,6%), que sin este guard aparecía como
+    una entrada de 47.600 millones — más que todo el flujo real del semestre.
+    Pide las DOS condiciones, así que una creación grande de verdad (que no
+    mueve el NAV) no se confunde con un split.
+    """
+    if not prev["shares"] or not prev["nav"]:
+        return False
+    ratio = cur["shares"] / prev["shares"]
+    if abs(ratio - 1) <= 0.15:
+        return False
+    return abs(ratio * cur["nav"] / prev["nav"] - 1) < 0.02
 
 
 def _is_live(window):
@@ -302,6 +390,14 @@ def _self_check():
     mixta = serie([(1000, 10.0), (1100, 10.2)]) + serie([(5000, 10.3)], src="yf")
     assert _daily_flows(mixta) == [100 * 10.2]
 
+    # split 2:1 (XLK, 2025-12-05): shares x2 y NAV /2 -> no es flujo
+    split = serie([(325_805_897, 291.04), (650_611_794, 146.62),
+                   (651_000_000, 147.0)])
+    assert _daily_flows(split) == [(651_000_000 - 650_611_794) * 147.0]
+    # creación real del 20% (el NAV no se mueve): SÍ es flujo
+    grande = serie([(1000, 10.0), (1200, 10.05)])
+    assert _daily_flows(grande) == [200 * 10.05]
+
     # migración: el histórico yfinance viejo se ignora sin borrar el archivo
     vieja = [{"date": "2026-07-01", "shares": 999, "nav": 5.0}]     # sin 'src'
     assert _usable(vieja + viva) == viva
@@ -309,12 +405,21 @@ def _self_check():
 
     print("self-check OK")
 
-    # Fuente en vivo (se saltea si no hay red)
-    shares, nav, src = _fetch("SPY")
+    # Fuentes en vivo (se saltean si no hay red)
+    hist = _fetch_ssga_history("SPY")
+    if hist:
+        print(f"SSGA SPY: {len(hist)} filas, {hist[0]['date']} -> {hist[-1]['date']}")
+        assert len(hist) > 180, "navhist corto: no alcanza para la ventana de 180d"
+        assert hist == sorted(hist, key=lambda r: r["date"]), "sin ordenar"
+        assert 5e8 < hist[-1]["shares"] < 3e9, hist[-1]
+        assert _is_live(hist[-51:]), "el histórico de SSGA debería moverse"
+    assert not _fetch_ssga_history("TLT"), "TLT no es SPDR: debería dar []"
+
+    shares, nav, src = _fetch("TLT")
     if shares:
-        print(f"SPY en vivo: shares={shares:,} nav={nav:.2f} src={src}")
+        print(f"TLT en vivo: shares={shares:,} nav={nav:.2f} src={src}")
         assert src == "sa", "stockanalysis caído: cayó al yfinance congelado"
-        assert 5e8 < shares < 3e9, f"shares de SPY fuera de rango: {shares}"
+        assert 3e8 < shares < 1e9, f"shares de TLT fuera de rango: {shares}"
     else:
         print("sin red: omitido el chequeo de fuente en vivo")
 
