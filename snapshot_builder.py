@@ -96,10 +96,14 @@ def build_node(node, bench_bars, lookup, rrg_window=None, rrg_tail=None, flow_da
             mom = _agg(built, "mom")
         if cmf_v is None:
             cmf_v = _agg(built, "cmf")
-        if flow_m is None:
-            # los hijos ya vienen en millones: se suman directo, sin re-dividir
-            child_flows = [c["flow"] for c in built if c.get("flow") is not None]
-            flow_m = round(sum(child_flows), 1) if child_flows else None
+        # El flujo de un grupo es la SUMA de sus partes, no el de su ETF proxy:
+        # SPY mide una porción de Equity y AGG una de Bonos, así que el padre
+        # contradecía a sus propios hijos (Bonos en 0 con EMB marcando +124M).
+        # El símbolo propio queda como fallback si ningún hijo tiene dato.
+        # Los hijos ya vienen en millones: se suman directo, sin re-dividir.
+        child_flows = [c["flow"] for c in built if c.get("flow") is not None]
+        if child_flows:
+            flow_m = round(sum(child_flows), 1)
 
     return {
         "name": node["name"],

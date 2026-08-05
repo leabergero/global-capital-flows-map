@@ -21,11 +21,30 @@ la suma de los flujos diarios de los últimos N snapshots DISPONIBLES; el histó
 se llena con el tiempo (día 6 -> ventana 5, día 51 -> ventana 50).
 
 Granularidad diaria. Solo ETF (tienen creación/redención). Dinero observado.
+
+Por qué NO yfinance para shares (2026-08)
+-----------------------------------------
+El snapshot diario se tomaba de yfinance y resultó no medir nada:
+  • 24/43 símbolos devolvían el MISMO `sharesOutstanding` día tras día (SPY
+    clavado en 917.782.016 cuando el real es ~1.050M) -> Δshares = 0 -> flujo
+    exactamente 0.0 para SPY, AGG, DBC, TLT, XLK, GLD, HYG…
+  • los otros 19 no traían `sharesOutstanding` y caían al fallback
+    `totalAssets/NAV`, pero `totalAssets` TAMBIÉN viene cacheado y constante:
+    shares = K/nav hace que Δshares refleje solo el movimiento del precio, y
+    con el signo invertido (precio baja -> "entrada" de capital inexistente).
+Ambas patologías se ven en el histórico como AUM idéntico al 4º decimal
+durante semanas. Hoy la fuente primaria es stockanalysis.com (shares reales,
+43/43 de cobertura) y yfinance queda solo como último recurso, marcado en
+`src` para no mezclar escalas entre fuentes. `_is_live()` desconfía de toda
+serie con esa firma de dato muerto y devuelve None en vez de un cero o un
+ruido que en pantalla se lee como señal.
 """
 import json
 import os
+import re
 from datetime import date
 
+import requests
 import yfinance as yf
 
 DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
@@ -59,11 +78,62 @@ def _save(store):
 # ---------------------------------------------------------------------------
 # Captura de un snapshot diario
 # ---------------------------------------------------------------------------
-def _fetch(symbol):
+SA_URL = "https://stockanalysis.com/etf/{}/__data.json"
+SA_UA = ("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) "
+         "Chrome/120.0.0.0 Safari/537.36")
+_SUFFIX = {"K": 1e3, "M": 1e6, "B": 1e9, "T": 1e12}
+
+
+def _num(v):
+    """'$41.69B' / '505.60M' / 1234.5 -> float, o None si no es un número."""
+    if isinstance(v, (int, float)) and not isinstance(v, bool):
+        return float(v)
+    if not isinstance(v, str):
+        return None
+    m = re.fullmatch(r"(-?\d+(?:\.\d+)?)\s*([KMBT])?",
+                     v.strip().replace("$", "").replace(",", ""))
+    return float(m.group(1)) * _SUFFIX.get(m.group(2) or "", 1) if m else None
+
+
+def _fetch_stockanalysis(symbol):
     """
-    (shares_outstanding, nav) actuales de un ETF, o (None, None) si falla.
-    Si yfinance no expone sharesOutstanding directo, lo deriva de totalAssets/NAV
-    (rescata los ETF menos líquidos: sectoriales, commodities, agrícolas).
+    (shares_outstanding, nav) reales, o (None, None).
+
+    El payload es el `__data.json` de SvelteKit: los objetos guardan índices
+    contra un array plano de valores, así que hay que desreferenciar.
+    El NAV se toma como aum/shares (consistente por construcción y de la misma
+    fecha de corte, en vez de mezclar un precio de otra fuente).
+    """
+    try:
+        r = requests.get(SA_URL.format(symbol.lower()),
+                         headers={"User-Agent": SA_UA}, timeout=20)
+        if r.status_code != 200:
+            return None, None
+        doc = r.json()
+    except Exception:
+        return None, None
+    for node in doc.get("nodes", []):
+        values = node.get("data")
+        if not isinstance(values, list):
+            continue
+        for v in values:
+            if not (isinstance(v, dict) and "sharesOut" in v and "aum" in v):
+                continue
+            i_sh, i_aum = v["sharesOut"], v["aum"]
+            if not (isinstance(i_sh, int) and isinstance(i_aum, int)):
+                continue
+            shares = _num(values[i_sh])
+            aum = _num(values[i_aum])
+            if shares and aum:
+                return round(shares), aum / shares
+    return None, None
+
+
+def _fetch_yfinance(symbol):
+    """
+    Último recurso. OJO: yfinance sirve shares/AUM cacheados que pueden estar
+    congelados semanas (ver docstring del módulo) — por eso queda marcado como
+    src='yf' y `_is_live()` descarta la serie si no se mueve.
     """
     try:
         info = yf.Ticker(symbol).info
@@ -82,6 +152,17 @@ def _fetch(symbol):
     return shares, nav
 
 
+def _fetch(symbol):
+    """(shares_outstanding, nav, fuente) actuales de un ETF, o (None, None, None)."""
+    shares, nav = _fetch_stockanalysis(symbol)
+    if shares:
+        return shares, nav, "sa"
+    shares, nav = _fetch_yfinance(symbol)
+    if shares:
+        return shares, nav, "yf"
+    return None, None, None
+
+
 def snapshot(symbols, today=None):
     """
     Toma un snapshot de hoy para cada símbolo y lo agrega al histórico.
@@ -92,12 +173,13 @@ def snapshot(symbols, today=None):
     store = _load()
     captured = 0
     for sym in symbols:
-        shares, nav = _fetch(sym)
+        shares, nav, src = _fetch(sym)
         if shares is None:
             continue
         series = store.setdefault(sym, [])
         series[:] = [s for s in series if s["date"] != today]   # idempotencia
-        series.append({"date": today, "shares": shares, "nav": round(nav, 4)})
+        series.append({"date": today, "shares": shares,
+                       "nav": round(nav, 4), "src": src})
         series.sort(key=lambda s: s["date"])
         captured += 1
     _save(store)
@@ -108,24 +190,66 @@ def snapshot(symbols, today=None):
 # Cálculo de flujo
 # ---------------------------------------------------------------------------
 def _daily_flows(series):
-    """Flujos diarios (USD) entre snapshots consecutivos."""
+    """
+    Flujos diarios (USD) entre snapshots consecutivos.
+
+    Ignora los pares que cruzan de una fuente a otra: cada fuente mide shares
+    en su propia escala (yfinance daba 109,7M para TLT donde el real es 505,6M),
+    así que ese salto sería un flujo fantasma de miles de millones.
+    """
     out = []
     for prev, cur in zip(series, series[1:]):
-        d_shares = cur["shares"] - prev["shares"]
-        out.append(d_shares * cur["nav"])
+        if prev.get("src") != cur.get("src"):
+            continue
+        out.append((cur["shares"] - prev["shares"]) * cur["nav"])
     return out
+
+
+def _is_live(window):
+    """
+    ¿La serie mide algo, o es un dato congelado disfrazado de flujo?
+
+    Dos firmas de dato muerto, ambas vistas en producción con yfinance:
+      • shares idéntico en toda la ventana -> Δ=0 siempre. En 43 ETFs líquidos
+        no existen 5 días sin una sola creación/redención: es el campo cacheado.
+      • AUM constante mientras shares varía -> shares se derivó de un
+        totalAssets fijo dividido por el NAV, así que el "flujo" es el precio
+        con el signo dado vuelta.
+    Preferimos None (tile gris + aviso) antes que un número que se lee como
+    señal. Es la única capa que el terminal declara OBSERVADA: si no mide, calla.
+    """
+    shares = {r["shares"] for r in window}
+    if len(shares) < 2:
+        return False
+    aums = [r["shares"] * r["nav"] for r in window]
+    return (max(aums) - min(aums)) / max(aums) > 1e-6
+
+
+def _usable(series):
+    """
+    Snapshots comparables entre sí: los de la fuente del último snapshot.
+
+    Descarta solo los de OTRAS fuentes, así que el histórico yfinance viejo se
+    ignora sin borrar el archivo, y un día suelto en que stockanalysis falle no
+    parte la serie en dos (queda un hueco de un día, no un flujo fantasma).
+    """
+    if not series:
+        return []
+    src = series[-1].get("src")
+    return [r for r in series if r.get("src") == src]
 
 
 def flow_window(symbol, days):
     """
     Flujo acumulado (USD) de los últimos `days` snapshots disponibles, o None si
-    aún no hay histórico suficiente (se necesitan >=2 snapshots).
+    aún no hay histórico suficiente (se necesitan >=2 snapshots) o si la serie
+    no mide nada (ver `_is_live`).
     """
-    series = _load().get(symbol, [])
-    if len(series) < 2:
+    window = _usable(_load().get(symbol, []))[-(days + 1):]
+    if len(window) < 2 or not _is_live(window):
         return None
-    flows = _daily_flows(series)
-    return sum(flows[-days:]) if flows else None
+    flows = _daily_flows(window)
+    return sum(flows) if flows else None
 
 
 def all_windows(symbol):
@@ -134,11 +258,66 @@ def all_windows(symbol):
 
 
 def history_depth():
-    """Días de histórico acumulados (el ETF con más snapshots)."""
+    """
+    Días de histórico USABLE (el ETF con más snapshots de la fuente vigente).
+    El frontend lo muestra como 'llevás N días' — contar snapshots de una
+    fuente descartada prometería ventanas que nunca van a aparecer.
+    """
     store = _load()
-    return max((len(s) for s in store.values()), default=0)
+    return max((len(_usable(s)) for s in store.values()), default=0)
 
 
 def coverage():
-    """Resumen por símbolo: cuántos snapshots tiene cada uno."""
-    return {sym: len(series) for sym, series in sorted(_load().items())}
+    """Resumen por símbolo: cuántos snapshots usables tiene cada uno."""
+    return {sym: len(_usable(series)) for sym, series in sorted(_load().items())}
+
+
+# ---------------------------------------------------------------------------
+# Self-check: `python etf_flow_tracker.py` (sin red salvo el último bloque)
+# ---------------------------------------------------------------------------
+def _self_check():
+    assert _num("505.60M") == 505_600_000
+    assert _num("$41.69B") == 41_690_000_000
+    assert _num("1,234.5") == 1234.5
+    assert _num("n/a") is None and _num(None) is None
+
+    def serie(pares, src="sa"):
+        return [{"date": f"2026-08-{i + 1:02d}", "shares": sh, "nav": nav, "src": src}
+                for i, (sh, nav) in enumerate(pares)]
+
+    # shares congelado (yfinance): 0.0 falso -> None
+    muerta = serie([(1000, 10.0), (1000, 11.0), (1000, 9.0)])
+    assert not _is_live(muerta)
+
+    # AUM constante, shares = K/nav (fallback totalAssets/NAV): ruido -> None
+    degenerada = serie([(1000, 10.0), (1250, 8.0), (800, 12.5)])
+    assert not _is_live(degenerada)
+
+    # creación/redención real
+    viva = serie([(1000, 10.0), (1100, 10.2), (1050, 10.1)])
+    assert _is_live(viva)
+    assert _daily_flows(viva) == [100 * 10.2, -50 * 10.1]
+
+    # el salto entre fuentes no inventa un flujo
+    mixta = serie([(1000, 10.0), (1100, 10.2)]) + serie([(5000, 10.3)], src="yf")
+    assert _daily_flows(mixta) == [100 * 10.2]
+
+    # migración: el histórico yfinance viejo se ignora sin borrar el archivo
+    vieja = [{"date": "2026-07-01", "shares": 999, "nav": 5.0}]     # sin 'src'
+    assert _usable(vieja + viva) == viva
+    assert _usable(vieja) == vieja      # mientras no haya fuente nueva, se usa
+
+    print("self-check OK")
+
+    # Fuente en vivo (se saltea si no hay red)
+    shares, nav, src = _fetch("SPY")
+    if shares:
+        print(f"SPY en vivo: shares={shares:,} nav={nav:.2f} src={src}")
+        assert src == "sa", "stockanalysis caído: cayó al yfinance congelado"
+        assert 5e8 < shares < 3e9, f"shares de SPY fuera de rango: {shares}"
+    else:
+        print("sin red: omitido el chequeo de fuente en vivo")
+
+
+if __name__ == "__main__":
+    _self_check()
