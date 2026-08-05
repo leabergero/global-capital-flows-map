@@ -1,0 +1,294 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>War Lab · Global Flow Matrix</title>
+<style>
+  :root{
+    --bg:#171821; --surface:#1f2129; --surface2:#272934; --border:#363a47;
+    --text:#dcdde3; --muted:#8b8fa0;
+    --blue:#7a9ec8; --green:#6dd26d; --amber:#e8a847; --purple:#9885b8; --red:#ff6b6b;
+    --mono:ui-monospace,"SF Mono","JetBrains Mono","Cascadia Code",Menlo,Consolas,monospace;
+    --sans:"Inter",ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--text);font-family:var(--sans);
+    font-size:14px;line-height:1.45;-webkit-font-smoothing:antialiased}
+  @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+  .wrap{max-width:1320px;margin:0 auto;padding:18px 18px 60px}
+  header{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;
+    border-bottom:1px solid var(--border);padding-bottom:12px;margin-bottom:16px}
+  .brand{font-family:var(--mono);font-size:13px;letter-spacing:.18em;color:var(--muted);
+    text-transform:uppercase}
+  h1{font-size:20px;font-weight:600;margin:0;letter-spacing:-.01em}
+  .back{margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--blue);
+    text-decoration:none;border:1px solid var(--border);border-radius:4px;padding:4px 10px}
+  .back:hover{border-color:var(--blue)}
+  .panel{background:var(--surface);border:1px solid var(--border);border-radius:8px;
+    padding:14px 16px;margin-bottom:16px;animation:fadeIn .6s ease-out}
+  .panel-title{font-family:var(--mono);font-size:11px;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--muted);display:block;margin-bottom:4px}
+  .panel-sub{font-size:12px;color:var(--muted);margin-bottom:14px;max-width:900px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media(max-width:980px){.grid2{grid-template-columns:1fr}}
+  .hero{display:flex;align-items:center;gap:22px;flex-wrap:wrap}
+  .gauge-num{font-size:44px;font-weight:700;line-height:1;font-family:var(--mono)}
+  .gauge-lbl{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase}
+  .bar-track{height:12px;background:var(--surface2);border-radius:6px;overflow:hidden;
+    border:1px solid var(--border);min-width:260px;flex:1}
+  .bar-fill{height:100%;border-radius:6px;transition:width .5s ease}
+  /* la tabla de detalle tiene 8 columnas: en pantalla angosta scrollea ella
+     sola en vez de apelotonar el texto */
+  .tabla-scroll{overflow-x:auto}
+  table{width:100%;border-collapse:collapse;font-size:12px;min-width:520px}
+  th{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--muted);text-align:right;padding:6px 8px;border-bottom:1px solid var(--border);font-weight:400}
+  th:first-child,td:first-child{text-align:left}
+  td{padding:6px 8px;border-bottom:1px solid rgba(54,58,71,.5);text-align:right;
+    font-family:var(--mono)}
+  td.name{font-family:var(--sans)}
+  tr:last-child td{border-bottom:none}
+  .pos{color:var(--green)}.neg{color:var(--red)}.dim{color:var(--muted)}
+  .tag{font-family:var(--mono);font-size:9px;letter-spacing:.08em;padding:1px 5px;
+    border-radius:3px;border:1px solid var(--border);color:var(--muted)}
+  .tag.sig{color:var(--amber);border-color:var(--amber)}
+  .note{font-size:11px;color:var(--muted);line-height:1.6;margin-top:12px;
+    border-left:2px solid var(--border);padding-left:10px}
+  .note b{color:var(--amber);font-weight:600}
+  .foot{margin-top:22px;color:var(--muted);font-size:11px;line-height:1.6;
+    border-top:1px solid var(--border);padding-top:14px}
+  .foot code{font-family:var(--mono);color:var(--blue)}
+  .loading{padding:60px;text-align:center;color:var(--muted);font-family:var(--mono);font-size:12px}
+  svg{display:block;width:100%;height:auto}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <span class="brand">war lab</span>
+    <h1>Riesgo geopolítico × rotación sectorial</h1>
+    <a class="back" href="/">← volver al terminal</a>
+  </header>
+
+  <div id="app"><div class="loading">calculando 26 años de historia…</div></div>
+
+  <div class="foot">
+    Fuente del riesgo: <b>AI-GPR</b> — Caldara &amp; Iacoviello, puntuación por LLM de
+    artículos del NYT, Washington Post y Chicago Tribune (<code>1960→hoy, diario</code>).
+    Precios sectoriales: SPDR <code>XLx</code> vía yfinance desde 1998.
+    RORO: mismo compuesto que el terminal (<code>compute/roro.py</code>), reconstruido sobre la historia larga.
+    <div class="copyright" style="margin-top:8px;font-size:10px">© 2026 Leandro R. Bergero, Msc Finance &amp; Banking BSM-UPF</div>
+  </div>
+</div>
+
+<script>
+const C={green:'#6dd26d',red:'#ff6b6b',amber:'#e8a847',blue:'#7a9ec8',purple:'#9885b8',
+         muted:'#8b8fa0',border:'#363a47',surface2:'#272934'};
+const NIVEL={very_low:['MUY BAJO',C.green],low:['BAJO',C.green],moderate:['MODERADO',C.amber],
+             high:['ALTO',C.red],critical:['CRÍTICO',C.red]};
+const fmt=(v,d=1)=>(v>=0?'+':'')+v.toFixed(d);
+const cls=v=>v>0?'pos':v<0?'neg':'dim';
+const esc=s=>String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+
+/* ---------- gráfico 1: serie temporal GPR + RORO ---------- */
+function serieChart(serie){
+  // B=46 reserva DOS filas bajo el eje: años y leyenda. Con una sola fila, el
+  // primer año caía justo encima del texto de la leyenda.
+  const W=1240,H=280,L=44,R=52,T=14,B=46;
+  const n=serie.length; if(!n) return '';
+  const x=i=>L+i/(n-1)*(W-L-R);
+  const yG=v=>T+(100-v)/100*(H-T-B);              // percentil 0..100
+  const rr=serie.map(d=>d.roro), rmax=Math.max(3,...rr.map(Math.abs));
+  const yR=v=>T+(rmax-v)/(2*rmax)*(H-T-B);
+  let s=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Serie de riesgo y RORO">`;
+  // banda de riesgo alto
+  s+=`<rect x="${L}" y="${yG(100)}" width="${W-L-R}" height="${yG(90)-yG(100)}" fill="${C.red}" opacity=".07"/>`;
+  [0,25,50,75,100].forEach(v=>{
+    s+=`<line x1="${L}" y1="${yG(v)}" x2="${W-R}" y2="${yG(v)}" stroke="${C.border}" stroke-width="1" opacity=".5"/>`;
+    s+=`<text x="${L-8}" y="${yG(v)+3}" fill="${C.muted}" font-size="9" text-anchor="end" font-family="var(--mono)">${v}</text>`;});
+  s+=`<line x1="${L}" y1="${yR(0)}" x2="${W-R}" y2="${yR(0)}" stroke="${C.purple}" stroke-width="1" stroke-dasharray="3 3" opacity=".5"/>`;
+  s+=`<text x="${W-R+6}" y="${yR(0)+3}" fill="${C.purple}" font-size="8" font-family="var(--mono)">RORO 0</text>`;
+  const path=(f,acc)=>serie.map((d,i)=>`${i?'L':'M'}${x(i).toFixed(1)},${f(acc(d)).toFixed(1)}`).join('');
+  s+=`<path d="${path(yR,d=>d.roro)}" fill="none" stroke="${C.purple}" stroke-width="1.2" opacity=".75"/>`;
+  s+=`<path d="${path(yG,d=>d.gpr)}" fill="none" stroke="${C.amber}" stroke-width="1.6"/>`;
+  // años
+  let prev='';
+  serie.forEach((d,i)=>{const y=d.date.slice(0,4);
+    if(y!==prev&&i>0){prev=y;
+      s+=`<line x1="${x(i)}" y1="${T}" x2="${x(i)}" y2="${H-B}" stroke="${C.border}" stroke-width="1" opacity=".35"/>`;
+      s+=`<text x="${x(i)}" y="${H-26}" fill="${C.muted}" font-size="9" text-anchor="middle" font-family="var(--mono)">${y}</text>`;}
+    else if(!prev)prev=y;});
+  s+=`<text x="${L}" y="${H-8}" fill="${C.amber}" font-size="9" font-family="var(--mono)">— percentil AI-GPR</text>`;
+  s+=`<text x="${L+150}" y="${H-8}" fill="${C.purple}" font-size="9" font-family="var(--mono)">— compuesto RORO</text>`;
+  return s+'</svg>';
+}
+
+/* ---------- gráfico 2: barras divergentes ---------- */
+function barras(filas,campo,unidad,extra){
+  // El valor va en COLUMNA FIJA, no pegado a la punta de la barra: pegado se
+  // superponía con el nombre del sector en las barras negativas largas y con
+  // la columna `extra` en las positivas largas.
+  const W=640,fila=26,T=18,H=T+filas.length*fila+10,L=118,R=150;
+  const VAL=W-118, EXT=W-4;            // columnas fijas, ambas anchor=end
+  const max=Math.max(...filas.map(f=>Math.abs(f[campo])),1)*1.15;
+  const half=(W-L-R)/2, cx=L+half;
+  let s=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="ranking">`;
+  s+=`<line x1="${cx}" y1="${T-6}" x2="${cx}" y2="${H-6}" stroke="${C.border}"/>`;
+  filas.forEach((f,i)=>{
+    const y=T+i*fila, v=f[campo], w=Math.abs(v)/max*half, col=v>=0?C.green:C.red;
+    s+=`<text x="${L-8}" y="${y+11}" fill="#dcdde3" font-size="11" text-anchor="end">${esc(f.name)}</text>`;
+    s+=`<rect x="${v>=0?cx:cx-w}" y="${y+2}" width="${w}" height="13" fill="${col}" opacity=".8" rx="2"/>`;
+    s+=`<text x="${VAL}" y="${y+12}" fill="${col}" font-size="10"
+         text-anchor="end" font-family="var(--mono)">${fmt(v)}${unidad}</text>`;
+    if(extra){const e=extra(f); if(e)s+=`<text x="${EXT}" y="${y+12}" fill="${C.muted}" font-size="9"
+         text-anchor="end" font-family="var(--mono)">${esc(e)}</text>`;}
+  });
+  return s+'</svg>';
+}
+
+/* ---------- gráfico 3: scatter RORO vs GPR ---------- */
+function scatter(rg){
+  // B=48: dos filas bajo el eje (números y leyenda), si no el "0" del eje X
+  // caía sobre el texto de la leyenda.
+  const W=600,H=318,L=44,R=16,T=14,B=48;
+  const x=v=>L+v/100*(W-L-R);
+  const rmax=Math.max(3,...rg.puntos.map(p=>Math.abs(p[1])));
+  const y=v=>T+(rmax-v)/(2*rmax)*(H-T-B);
+  let s=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="RORO vs riesgo">`;
+  s+=`<rect x="${x(90)}" y="${T}" width="${x(100)-x(90)}" height="${H-T-B}" fill="${C.red}" opacity=".07"/>`;
+  [-3,-1.5,0,1.5,3].filter(v=>Math.abs(v)<=rmax).forEach(v=>{
+    s+=`<line x1="${L}" y1="${y(v)}" x2="${W-R}" y2="${y(v)}" stroke="${C.border}" opacity=".5"/>`;
+    s+=`<text x="${L-6}" y="${y(v)+3}" fill="${C.muted}" font-size="9" text-anchor="end" font-family="var(--mono)">${v}</text>`;});
+  [0,25,50,75,100].forEach(v=>
+    s+=`<text x="${x(v)}" y="${H-28}" fill="${C.muted}" font-size="9" text-anchor="middle" font-family="var(--mono)">${v}</text>`);
+  s+=`<text x="${x(50)}" y="${H-16}" fill="${C.muted}" font-size="9" text-anchor="middle" font-family="var(--mono)">percentil de riesgo geopolítico</text>`;
+  rg.puntos.forEach(p=>{s+=`<circle cx="${x(p[0]).toFixed(1)}" cy="${y(p[1]).toFixed(1)}" r="1.6"
+     fill="${p[0]>=90?C.red:C.blue}" opacity=".28"/>`;});
+  // media de RORO por decil de riesgo
+  const pts=rg.deciles.filter(d=>d.roro!==null).map((d,i)=>[x(i*10+5),y(d.roro)]);
+  s+=`<path d="${pts.map((p,i)=>`${i?'L':'M'}${p[0].toFixed(1)},${p[1].toFixed(1)}`).join('')}"
+       fill="none" stroke="${C.amber}" stroke-width="2"/>`;
+  pts.forEach(p=>s+=`<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="3" fill="${C.amber}"/>`);
+  s+=`<text x="${L}" y="${H-4}" fill="${C.amber}" font-size="9" font-family="var(--mono)">— RORO medio por decil de riesgo</text>`;
+  return s+'</svg>';
+}
+
+/* ---------- render ---------- */
+function render(d){
+  const g=d.meta.gpr_hoy, [lbl,col]=NIVEL[g.level]||['—',C.muted];
+  const reg=d.regimenes, be=d.betas, rg=d.roro_gpr;
+  const mapBeta={}; be.forEach(b=>mapBeta[b.symbol]=b);
+
+  let h=`
+  <div class="panel">
+    <span class="panel-title">riesgo geopolítico hoy</span>
+    <div class="hero">
+      <div>
+        <div class="gauge-num" style="color:${col}">${g.percentile.toFixed(0)}<span style="font-size:18px;color:${C.muted}"> / 100</span></div>
+        <div class="gauge-lbl" style="color:${col}">${lbl}</div>
+      </div>
+      <div class="bar-track"><div class="bar-fill" style="width:${g.percentile}%;background:${col}"></div></div>
+      <div style="font-family:var(--mono);font-size:11px;color:${C.muted};line-height:1.7">
+        dato del <b style="color:#dcdde3">${g.date}</b><br>
+        índice bruto ${g.raw} · media 30d ${g.ma30}<br>
+        percentil sobre ${g.ref_start}→hoy
+      </div>
+    </div>
+    <div class="note">El número es el <b>percentil histórico</b> de la media de 30 días, no el índice crudo.
+      Un min-max daría ${g.minmax} sobre esta misma fecha: el pico del 11-S define el rango entero y aplasta
+      todo lo demás contra el piso. El índice se publica con ~5 días de retraso.</div>
+  </div>
+
+  <div class="panel">
+    <span class="panel-title">riesgo geopolítico vs régimen de mercado · ${d.meta.desde.slice(0,4)}→${d.meta.hasta.slice(0,4)}</span>
+    <div class="panel-sub">Banda roja = percentil ≥ 90 (riesgo alto).</div>
+    ${serieChart(d.serie)}
+  </div>
+
+  <div class="grid2">
+    <div class="panel">
+      <span class="panel-title">quién gana la rotación cuando hay crisis</span>
+      <div class="panel-sub">Retorno <b>relativo a SPY</b> anualizado con riesgo alto (pct ≥ ${d.meta.corte_alto})
+        menos el de riesgo bajo (&lt; ${d.meta.corte_bajo}), <b>demediado por año</b>.</div>
+      ${barras(reg,'spread_aj',' pp',f=>`crudo ${fmt(f.spread)}`)}
+      <div class="note">Sin demediar por año, <b>Tecnología</b> sale primera (+${reg.find(r=>r.symbol==='XLK').spread} pp):
+        los años de riesgo alto se concentran en 2001-03 y 2022-26, así que el sector que tuvo una buena década
+        aparece como ganador de las guerras. Quitado el drift, cae al ${reg.findIndex(r=>r.symbol==='XLK')+1}º puesto
+        — y su reacción al shock es la más negativa de las once.</div>
+    </div>
+
+    <div class="panel">
+      <span class="panel-title">reacción inmediata al shock</span>
+      <div class="panel-sub">Puntos básicos de retorno relativo por cada <b>1σ de salto</b> del riesgo en un día.
+        Mide el reflejo, no el régimen. <span class="tag sig">t≥2</span> = estadísticamente distinto de cero.</div>
+      ${barras(be,'beta_bp',' pb',f=>`t ${f.t.toFixed(2)}`)}
+      <div class="note">Acá aparecen los <b>defensivos clásicos</b> — Inmobiliario, Consumo básico, Utilities —
+        con las betas positivas más significativas, y Tecnología y Consumo discrecional del lado negativo.
+        Es la lectura más limpia de "efecto guerra": mide el día del susto, no la década.</div>
+    </div>
+  </div>
+
+  <div class="grid2">
+    <div class="panel">
+      <span class="panel-title">¿el RORO capta el riesgo geopolítico?</span>
+      <div class="panel-sub">Compuesto RORO contra percentil de riesgo, ${rg.n.toLocaleString('es')} días.</div>
+      ${scatter(rg)}
+      <div class="note">Correlación de niveles <b>${rg.corr_niveles}</b> y de cambios <b>${rg.corr_cambios}</b>:
+        prácticamente <b>cero</b>. El riesgo geopolítico y el risk-on/risk-off del mercado son casi ortogonales —
+        el mercado no traduce la tensión geopolítica en aversión al riesgo medible por estos cinco ratios.
+        Es un resultado, no un fallo: el GPR aporta información que el RORO no tiene.</div>
+    </div>
+
+    <div class="panel">
+      <span class="panel-title">episodios de riesgo extremo · +${d.meta.ventana_evento} días</span>
+      <div class="panel-sub">Picos con percentil ≥ ${d.meta.corte_pico}, agrupados por episodio.
+        Retorno del mercado y sector relativo ganador/perdedor.</div>
+      <div class="tabla-scroll"><table>
+        <thead><tr><th>episodio</th><th>GPR</th><th>mercado</th><th>gana</th><th>pierde</th></tr></thead>
+        <tbody>${d.eventos.map(e=>`<tr>
+          <td class="name">${e.date}</td>
+          <td class="dim">${e.gpr.toFixed(0)}</td>
+          <td class="${cls(e.mercado)}">${fmt(e.mercado)}%</td>
+          <td class="pos">${esc(e.ganador.name)} ${fmt(e.ganador.ret)}</td>
+          <td class="neg">${esc(e.perdedor.name)} ${fmt(e.perdedor.ret)}</td></tr>`).join('')}
+        </tbody>
+      </table></div>
+      <div class="note">Cada crisis es distinta: el petróleo dominó 2022 y no 2001.
+        Las medias de arriba esconden esta dispersión — por eso conviene mirar los episodios uno por uno.</div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <span class="panel-title">detalle por sector</span>
+    <div class="tabla-scroll"><table>
+      <thead><tr><th>sector</th><th>riesgo alto</th><th>riesgo bajo</th><th>spread</th>
+        <th>spread ajust.</th><th>β shock</th><th>t</th><th>días verde</th></tr></thead>
+      <tbody>${reg.map(f=>{const b=mapBeta[f.symbol]||{beta_bp:0,t:0};return `<tr>
+        <td class="name">${esc(f.name)} <span class="dim">${f.symbol}</span></td>
+        <td class="${cls(f.alto)}">${fmt(f.alto)}%</td>
+        <td class="${cls(f.bajo)}">${fmt(f.bajo)}%</td>
+        <td class="${cls(f.spread)}">${fmt(f.spread)}</td>
+        <td class="${cls(f.spread_aj)}"><b>${fmt(f.spread_aj)}</b></td>
+        <td class="${cls(b.beta_bp)}">${fmt(b.beta_bp)} pb</td>
+        <td class="${Math.abs(b.t)>=2?'':'dim'}">${b.t.toFixed(2)}</td>
+        <td class="dim">${f.hit.toFixed(0)}%</td></tr>`}).join('')}
+      </tbody>
+    </table></div>
+    <div class="note"><b>Cómo leer esto:</b> es correlación histórica, no causalidad ni predicción.
+      El AI-GPR mide cobertura periodística del riesgo, no la guerra en sí. La muestra son
+      ${d.meta.dias.toLocaleString('es')} días hábiles (${d.meta.desde} → ${d.meta.hasta}), con
+      ${reg[0].dias_alto} en riesgo alto — suficientes para una media, pocos para un régimen raro.</div>
+  </div>`;
+  document.getElementById('app').innerHTML=h;
+}
+
+fetch('/api/war/analysis').then(r=>r.json()).then(d=>{
+  if(d.error){document.getElementById('app').innerHTML=
+    `<div class="panel"><span class="panel-title">error</span><div class="note">${esc(d.error)}</div></div>`;return;}
+  render(d);
+}).catch(e=>{document.getElementById('app').innerHTML=
+  `<div class="panel"><span class="panel-title">error</span><div class="note">${esc(e.message)}</div></div>`;});
+</script>
+</body>
+</html>

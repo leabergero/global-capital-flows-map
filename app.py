@@ -23,6 +23,7 @@ from flask import Flask, jsonify, send_from_directory, request
 import config
 import cache
 import demo_data
+import gpr_store
 import preload_cache
 import snapshot_builder
 
@@ -94,9 +95,23 @@ def _init_scheduler():
         replace_existing=True,
     )
 
+    # Job diario: riesgo geopolítico AI-GPR. Todos los días (el índice es de
+    # prensa, no de mercado: también corre fines de semana) y a las 7:00 ET,
+    # antes de la apertura. La serie se publica con ~5 días de retraso, así que
+    # la hora exacta da igual mientras corra una vez al día.
+    _scheduler.add_job(
+        gpr_store.update,
+        'cron',
+        hour=7,
+        minute=0,
+        id='gpr_update_job',
+        replace_existing=True,
+    )
+
     try:
         _scheduler.start()
-        log.info("Scheduler iniciado: cierre 17:00 ET + intradía c/15min + captura ETF 18:00 ET")
+        log.info("Scheduler iniciado: cierre 17:00 ET + intradía c/15min + "
+                 "captura ETF 18:00 ET + AI-GPR 7:00 ET")
     except Exception as e:
         log.error("Error al iniciar scheduler: %s", e)
 
@@ -128,6 +143,46 @@ def snapshot():
     # Fallback síncrono (red de seguridad): en régimen normal, los jobs de
     # cron ya dejaron esto cacheado antes de que un usuario lo pida.
     data = snapshot_builder.build_and_cache(period)
+    return jsonify(data)
+
+
+@app.route("/api/geopolitical-risk/latest")
+def gpr_latest():
+    data = gpr_store.latest()
+    if data is None:
+        return jsonify({"error": "sin datos de AI-GPR todavía"}), 503
+    return jsonify(data)
+
+
+@app.route("/api/geopolitical-risk/history")
+def gpr_history():
+    try:
+        days = int(request.args.get("days", 365))
+    except ValueError:
+        days = 365
+    return jsonify(gpr_store.history(days))
+
+
+@app.route("/war")
+def war():
+    """Laboratorio de análisis riesgo geopolítico x sectores (ver war_lab.py)."""
+    return send_from_directory(app.static_folder, "war.html")
+
+
+@app.route("/api/war/analysis")
+def war_analysis():
+    # El análisis cruza 26 años de precios con el AI-GPR: pesado para hacerlo
+    # por request, y la entrada solo cambia una vez al día.
+    cached = cache.get("war:analysis")
+    if cached is not None:
+        return jsonify(cached)
+    try:
+        import war_lab
+        data = war_lab.analizar()
+    except Exception as e:
+        log.exception("war_lab falló")
+        return jsonify({"error": str(e)}), 503
+    cache.set("war:analysis", data, 6 * 3600)
     return jsonify(data)
 
 
