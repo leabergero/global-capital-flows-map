@@ -170,9 +170,27 @@ constante, actualizada por eventos reales de mercado en vez de por tiempo:
 FMP `/etf/holdings` es premium (429 en plan gratuito). Ninguna fuente gratuita da
 el histórico de shares/AUM de un ETF, así que se construye **hacia adelante**:
 
-- `etf_flow_tracker.py`: captura shares × NAV vía yfinance, acumula en
+- `etf_flow_tracker.py`: captura shares × NAV, acumula en
   `data/etf_flows.json`. `flujo_t = (shares_t − shares_{t-1}) × NAV_t`.
-  Fallback `totalAssets/NAV` para ETF menos líquidos → cobertura 43/43.
+  Fuente: **stockanalysis.com** (`/etf/{sym}/__data.json`, cobertura 43/43),
+  yfinance solo como último recurso.
+- **NO usar yfinance para shares** (verificado 2026-08, rompió la métrica
+  entera durante 14 días): sirve `sharesOutstanding` y `totalAssets`
+  cacheados y congelados. 24/43 símbolos repetían el mismo shares día tras
+  día (SPY clavado en 917.782.016 con el real en ~1.050M) → flujo 0.0 exacto;
+  los otros 19 caían al fallback `totalAssets/NAV` con `totalAssets` fijo, así
+  que `Δshares` era el precio con el signo invertido (precio baja → "entrada"
+  inexistente). Firma en disco: AUM idéntico al 4º decimal durante semanas.
+- Cada snapshot guarda su `src`. `_usable()` se queda solo con los de la
+  fuente vigente (el histórico viejo de otra fuente se ignora sin borrar el
+  archivo — las escalas de shares no son comparables entre fuentes), y
+  `_is_live()` devuelve **None** ante cualquiera de las dos firmas de dato
+  muerto. La capa observada calla en vez de inventar un cero: un 0.0 en el
+  heatmap se lee como "no se movió el capital", que es una afirmación.
+- Los nodos agregadores suman a sus hijos (`snapshot_builder.build_node`); el
+  ETF proxy es solo el fallback. SPY mide una porción de Equity y AGG una de
+  Bonos, así que el padre contradecía a sus propios hijos.
+- Self-check: `python etf_flow_tracker.py` (guards + parseo + fuente en vivo).
 - `scrape_etf_flows.py`: corre 1x/día. Las ventanas 5/20/50 se llenan con el
   tiempo (día 6 → 5d, día 21 → 20d, día 51 → 50d).
 - Automatizado con **anacron** (recupera corridas si la máquina estuvo apagada):
@@ -192,5 +210,5 @@ Separa inferencia vs observación:
 
 ---
 
-**Última actualización:** 2026-07-26
+**Última actualización:** 2026-08-05
 **Estado:** ✅ Production-ready — deployado en https://flow.quantcentral.eu
