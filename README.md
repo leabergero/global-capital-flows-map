@@ -6,7 +6,7 @@
 
 🔴 **Live demo:** [flow.quantcentral.eu](https://flow.quantcentral.eu)
 
-**Última actualización:** 2026-07-22
+**Última actualización:** 2026-08-05
 
 ---
 
@@ -22,6 +22,8 @@ Un dashboard financiero que muestra:
 - **SPY/10Y UST Gauge** - Indicador de ciclo vs defensa (Equity vs Bonos)
 - **Gold/Silver Ratio** - Calculado desde Oro y Plata
 - **Flujo ETF** - Dinero observado (creación/redención), histórico propio vía scraper
+- **Riesgo geopolítico (AI-GPR)** - Percentil histórico de tensión global, medido sobre prensa
+- **War Lab** (`/war`) - Qué sectores ganan y pierden en las crisis geopolíticas
 - **Noticias** - Headlines con sentimiento (OpenBB)
 
 **Modo**: con una `FMP_API_KEY` gratuita corre **LIVE** (datos de mercado vía yfinance,
@@ -53,7 +55,10 @@ cp .env.example .env        # y editar con tus keys
 python app.py               # o: bash run.sh
 ```
 
-Abrir **http://127.0.0.1:5000**
+> **Puerto 5055**, no 5000: el `:5000` suele estar ocupado por otro servicio.
+> Se cambia con `PORT=xxxx python app.py`.
+
+Abrir **http://127.0.0.1:5055**
 
 ### 🪟 Windows (PowerShell)
 
@@ -74,7 +79,7 @@ copy .env.example .env       # y editar con tus keys
 python app.py
 ```
 
-Abrir **http://127.0.0.1:5000**
+Abrir **http://127.0.0.1:5055**
 
 > Si PowerShell bloquea el script de activación, ejecutá una vez:
 > `Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned`
@@ -162,7 +167,62 @@ Cada KPI muestra:
 - Sparkline de últimos ~12 períodos
 - Tooltip descriptivo
 
-### 7. Actualización Automática
+### 7. Riesgo geopolítico (AI-GPR) y War Lab
+
+Gauge en la barra de régimen con el **percentil histórico** de riesgo geopolítico,
+y un laboratorio de análisis en **`/war`**.
+
+**La fuente**: [AI-GPR](https://www.matteoiacoviello.com/ai_gpr.html) de Caldara &
+Iacoviello — un LLM (GPT-4o-mini) puntúa artículos del NYT, Washington Post y
+Chicago Tribune por intensidad de riesgo geopolítico. Serie **diaria continua desde
+1960**, calibrada a media 100 sobre 1985-2019. Publicada con ~5 días de retraso.
+
+**Por qué percentil y no min-max** (la decisión que define el indicador):
+
+| | valor 2026-07-31 | min-max | percentil |
+|---|---|---|---|
+| `GPR_AI` media 30d | 175,7 | **43,5** → "Moderado" | **95,5** → "Alto" |
+
+El pico del 11-S define el rango entero y aplasta 66 años contra el piso. Peor: el
+min-max **reescribe la historia** — cada récord nuevo cambia el número de ayer, y el
+indicador deja de ser comparable consigo mismo. El min-max se guarda igual, para
+auditoría interna.
+
+**Por qué media de 30 días y no el dato crudo**: el AI-GPR diario cambia un **26,8%
+mediano** de un día al otro; sobre MA30, **1,03%**. Un gauge sobre el crudo
+parpadearía sin que pasara nada en el mundo.
+
+**Cortes no lineales** (50/75/90/97): con 20/40/60/80, "Alto o Crítico" sería el 40%
+de los días de la historia y la palabra dejaría de significar algo.
+
+#### War Lab (`/war`)
+
+Cruza el índice con los 11 sectores sobre **6.960 días hábiles (1998→hoy)**, en
+retorno **relativo a SPY** — en una crisis cae todo, lo que importa es quién cae
+menos. Cuatro análisis: régimen alto vs bajo, beta al shock, estudio de eventos y
+correlación con el RORO.
+
+Tres resultados que vale la pena conocer antes de leer los gráficos:
+
+1. **Cuidado con el spread crudo.** Dice que Tecnología es la gran ganadora de las
+   crisis (+9,5 pp anualizados). Es una trampa temporal: los períodos de riesgo alto
+   se concentran en 2001-03 y 2022-26, y lo segundo coincide con el boom de IA.
+   Demediado por año cae al 3º puesto, y su beta al shock es la **más negativa** de
+   las once. Por eso la tabla muestra las dos columnas.
+2. **Los ganadores reales son los defensivos clásicos**, medidos por reacción al
+   shock (pb de retorno relativo por 1σ de salto del índice):
+   Inmobiliario **+5,0** (t=2,96), Consumo básico **+4,0** (t=3,66), Utilities
+   **+4,0** (t=3,08). Energía es el caso raro: +3,3 al shock inmediato pero −5,2 pp
+   en régimen sostenido.
+3. **RORO y riesgo geopolítico son casi ortogonales**: correlación **0,035** en
+   niveles y **−0,02** en cambios sobre 6.886 días. El índice aporta información que
+   el terminal no tenía, en vez de duplicar el RORO.
+
+> Es **correlación histórica, no causalidad ni predicción**. El AI-GPR mide cobertura
+> periodística del riesgo, no la guerra. Y cada crisis es idiosincrática: el petróleo
+> dominó 2022 y no 2001 — por eso los episodios se listan uno por uno.
+
+### 8. Actualización Automática
 - **Recarga automática cada 1 hora** - Mantiene datos frescos
 - **Badge de estado** con hora de última actualización:
   - 🟢 LIVE (datos en vivo vía FMP)
@@ -190,12 +250,38 @@ compute/
   └─ news.py           Headlines con sentimiento (OpenBB, fallback FMP)
 
 demo_data.py           Snapshot sintético (fallback por sección)
-etf_flow_tracker.py    Histórico propio de flujo ETF (shares × NAV, acumulativo)
-scrape_etf_flows.py    Script diario (anacron) que alimenta el histórico de flujo
+snapshot_builder.py    Ensamblado del snapshot (separado de app.py: los jobs de
+                       cron lo invocan sin ciclo de imports)
+preload_cache.py       Jobs de mercado (cierre 17:00 ET, intradía c/15 min)
+price_store.py         Base de precios diarios, ventana fija de 320 barras
+intraday_store.py      Velas de 15 min (solo para el período 1d)
+etf_flow_tracker.py    Histórico de flujo ETF (SSGA + stockanalysis, ver abajo)
+scrape_etf_flows.py    Script diario que alimenta el histórico de flujo
+gpr_store.py           Riesgo geopolítico AI-GPR: descarga, percentil, niveles
+war_lab.py             Análisis riesgo geopolítico × sectores (sirve a /war)
 static/index.html      Frontend vanilla JS + SVG (sin build, sin frameworks)
+static/war.html        War Lab, mismo enfoque vanilla
 static/favicon.ico     Icono personalizado
-data/etf_flows.json    Histórico de flujo acumulado localmente (no versionado)
+
+data/                  (no versionado, se regenera solo)
+  ├─ price_history.json    320 barras diarias por símbolo
+  ├─ intraday_bars.json    3 días hábiles de velas de 15 min
+  ├─ etf_flows.json        histórico de shares × NAV por ETF
+  ├─ ai_gpr_daily.csv      CSV oficial del AI-GPR, completo (15 columnas)
+  └─ war_prices.csv        cierres sectoriales desde 1998 (solo War Lab)
 ```
+
+### Rutas
+
+| Ruta | Devuelve |
+|------|----------|
+| `GET /` | el terminal |
+| `GET /api/snapshot?period={1,5,20,50,180}` | JSON de todos los paneles |
+| `GET /api/health` | estado + modo (live/demo) |
+| `GET /war` | War Lab |
+| `GET /api/war/analysis` | el análisis completo (cacheado 6 h) |
+| `GET /api/geopolitical-risk/latest` | último dato del AI-GPR |
+| `GET /api/geopolitical-risk/history?days=365` | la serie |
 
 ---
 
@@ -274,7 +360,9 @@ data/etf_flows.json    Histórico de flujo acumulado localmente (no versionado)
 | Indicadores económicos | FRED | Gratis | `FRED_API_KEY` (opcional) |
 | COT (Traders) | Quandl | Gratis | `QUANDL_API_KEY` (opcional) |
 | Noticias | OpenBB | Gratis | Instalado en venv |
-| Flujo ETF | scraper propio (yfinance) | Gratis | — (FMP `/etf/holdings` es premium) |
+| Flujo ETF | SSGA + stockanalysis.com | Gratis | — (FMP `/etf/holdings` es premium) |
+| Riesgo geopolítico | AI-GPR (Caldara & Iacoviello) | Gratis | Nada |
+| Precios largos (War Lab) | yfinance, desde 1998 | Gratis | Nada |
 
 **Con la FMP key gratuita** (modo LIVE), el núcleo funciona al 100% (RRG, CMF, RORO, cotizaciones).
 - Sin FRED → macro indicadores en "n/d"
@@ -292,16 +380,38 @@ creación/redención real de unidades.
 flujo_t  ≈  (shares_outstanding_t − shares_outstanding_{t-1})  ×  NAV_t
 ```
 
-**El problema**: ninguna fuente gratuita da el *histórico* de shares/AUM de un ETF.
-- yfinance da el snapshot **actual** (`sharesOutstanding`, `totalAssets`) — gratis
-- `get_shares_full()` viene **vacío** para ETFs
-- SSGA/iShares publican solo el holding **del día**
-- Finnhub/EODHD/FactSet tienen el histórico pero **detrás de plan pago**
-- FMP `/etf/holdings` requiere **plan pago** (devuelve 429 en el plan gratuito)
+**No usar yfinance para esto.** Sirve `sharesOutstanding` y `totalAssets` cacheados
+y congelados: durante 14 días, 24 de 43 símbolos repitieron el mismo valor (SPY
+clavado en 917.782.016 cuando el real es ~1.050M) → flujo **exactamente 0**; los
+otros 19 caían al fallback `totalAssets/NAV` con `totalAssets` fijo, así que
+`Δshares` era el **precio con el signo invertido**. La firma en disco es un AUM
+idéntico al 4º decimal durante semanas.
 
-**La solución**: construir el histórico **hacia adelante**. Un script diario guarda
-un snapshot (shares × NAV) y acumula en `data/etf_flows.json`. Las ventanas 5/20/50
-son la suma de los flujos diarios de los últimos N snapshots disponibles.
+**Las fuentes que sí sirven**, en orden:
+
+1. **SSGA** — `navhist-us-en-{ticker}.xlsx` trae NAV + Shares Outstanding diarios con
+   **~22 años de histórico**. Cubre 16/43 (SPY, los 11 XLx, GLD, KBE, KIE, XOP), que
+   son los de más peso. Para estos, `snapshot()` reemplaza la serie entera: la fuente
+   es autoritativa y corrige huecos sola.
+2. **stockanalysis.com** — `/etf/{sym}/__data.json`, cobertura 43/43 pero solo el
+   corte de hoy. Los 27 restantes se construyen **hacia adelante**, un día por vez.
+   iShares (toda la clase Bonos) publica el mismo archivo que SSGA pero lo bloquea
+   con un bot-check que devuelve HTML con `Content-Type: text/csv`.
+3. yfinance, último recurso, marcado en `src` para no mezclar escalas.
+
+**Dos guardas que evitan mentir**, ambas en `etf_flow_tracker.py`:
+
+- `_is_live()` devuelve **`None`** (tile gris + aviso) ante cualquier firma de dato
+  muerto: shares constante en toda la ventana, o AUM constante mientras shares varía.
+  Un `0` en el heatmap se lee como "el capital no se movió", que es una afirmación.
+- `_es_split()` neutraliza los splits: XLK partió 2:1 el 2025-12-05 y sin el guard
+  aparecía como una entrada de **47.600 millones**, más que todo el flujo real del
+  semestre. Exige las dos condiciones (salto de shares + NAV dividido por el mismo
+  factor), así que una creación grande de verdad no se confunde con un split.
+
+Los nodos agregadores **suman a sus hijos**; el ETF proxy es solo el fallback: SPY
+mide una porción de Equity y AGG una de Bonos, así que el padre contradecía a sus
+propios hijos.
 
 ### Uso
 
@@ -335,8 +445,9 @@ El histórico se llena con el tiempo (no es retroactivo):
 | ~21 | Flujo **20d** |
 | ~51 | Flujo **50d** |
 
-Mientras se llena, el heatmap muestra un aviso ámbar y RS/CMF cubren la lectura.
-Cobertura: 43/43 ETFs (con fallback `totalAssets/NAV` para los menos líquidos).
+Los 16 símbolos de SSGA llegan con el histórico completo, así que sus ventanas están
+disponibles desde el primer día. Los otros 27 se acumulan. Mientras se llenan, el
+heatmap muestra un aviso ámbar y RS/CMF cubren la lectura.
 
 ---
 
@@ -410,6 +521,12 @@ MACRO_CARDS = [
 |------|---------|---------|-------------------|
 | **Inferida** (proxy) | RRG, CMF, RORO | "fuerza" / "presión" | NUNCA "entró/salió capital" |
 | **Observada** (dinero real) | Flujo ETF, COT | dinero medido | "el capital se movió" |
+| **Narrativa** (exógena) | AI-GPR | contexto | NUNCA como causa de un flujo |
+
+El riesgo geopolítico es una tercera capa: no se deriva de precios ni mide dinero,
+mide **cobertura periodística**. Por eso el gauge va separado por un divisor en la
+barra de régimen y su tooltip lo dice explícitamente — si estuviera junto al resto,
+invitaría a leerlo como causa de los flujos.
 
 **No se puede:**
 - Etiquetar RS como "flujo de dinero"
@@ -429,8 +546,13 @@ MACRO_CARDS = [
 # Verificar que compila
 python -m py_compile *.py compute/*.py
 
+# Self-checks de los módulos con lógica no trivial (asserts + fuente en vivo)
+python etf_flow_tracker.py     # guards de dato muerto, splits, parseo
+python gpr_store.py            # niveles, validación del CSV, descarga real
+python war_lab.py              # retorno relativo, z-score, y el análisis entero
+
 # Testear modo LIVE sin keys (yfinance es gratis)
-python -c "import app; print(app._live_snapshot()['meta']['mode'])"
+python -c "import snapshot_builder as sb; print(sb.live_snapshot(180)['meta']['mode'])"
 
 # Borrar caché y recargar
 rm -rf cache/*.json
@@ -473,8 +595,10 @@ Para reportar bugs o sugerir features, abre un issue en GitHub.
 - **yfinance**: [GitHub](https://github.com/ranaroussi/yfinance)
 - **FRED**: [API Docs](https://fred.stlouisfed.org/docs/api/)
 - **Quandl**: [API Docs](https://docs.quandl.com/)
+- **AI-GPR**: [Caldara & Iacoviello](https://www.matteoiacoviello.com/ai_gpr.html) — índice de riesgo geopolítico
+- **SSGA**: NAV history diario de los SPDR (`navhist-us-en-{ticker}.xlsx`)
 
 ---
 
-**Última actualización:** 2026-06-29
-**Estado:** ✅ Production-ready
+**Última actualización:** 2026-08-05
+**Estado:** ✅ Production-ready — [flow.quantcentral.eu](https://flow.quantcentral.eu)

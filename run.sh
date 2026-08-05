@@ -18,5 +18,5 @@ if [ ! -f ".env" ]; then
   cp .env.example .env
 fi
 
-echo "› Servidor en http://127.0.0.1:5000"
+echo "› Servidor en http://127.0.0.1:5055"
 python app.py

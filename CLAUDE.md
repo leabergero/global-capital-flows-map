@@ -20,13 +20,13 @@ Las API keys (todas opcionales, todas gratis) viven **solo** en el backend (vari
 ## Comandos
 
 ```bash
-# correr (crea venv, instala deps, arranca en :5000)
+# correr (crea venv, instala deps, arranca en :5055)
 bash run.sh
 
 # manual
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
-python app.py                       # http://127.0.0.1:5000
+python app.py                       # http://127.0.0.1:5055
 
 # verificar que compila todo
 python -m py_compile *.py compute/*.py
@@ -46,11 +46,31 @@ python -c "import preload_cache; preload_cache.job_intraday_update()"
 
 # capturar snapshot de flujo ETF (acumulativo, idempotente)
 python scrape_etf_flows.py
+
+# self-checks (asserts + verificación de la fuente en vivo)
+python etf_flow_tracker.py          # guards de dato muerto, splits, parseo
+python gpr_store.py                 # niveles, validación del CSV, descarga real
+python war_lab.py                   # el análisis completo por consola
+
+# refrescar el índice de riesgo geopolítico a mano
+python -c "import gpr_store; gpr_store.update()"
+
+# re-descargar los precios largos del War Lab (26 años, 21 símbolos)
+python -c "import war_lab; war_lab.descargar_precios(force=True)"
 ```
 
-> **Reiniciar el server**: usá `fuser -k 5000/tcp` para liberar el puerto, NO
-> `pkill -f "python app.py"` — ese patrón coincide con el propio comando del shell
-> y se auto-mata (exit 144).
+> **Puerto local: 5055**, no 5000 — el `:5000` lo ocupa el otro proyecto del
+> usuario (Neural) TAMBIÉN en la máquina de desarrollo, no solo en el server.
+> `app.py` usa 5055 por default; en producción el `.service` fija `PORT=5001`.
+>
+> **Reiniciar el server local**: NO uses `fuser -k 5000/tcp` (mataría Neural) ni
+> `pkill -f "python app.py"` (ese patrón coincide con el propio comando del shell
+> y se auto-mata, exit 144). Buscá el PID y verificá que sea tuyo antes de matarlo:
+>
+> ```bash
+> pgrep -af "\.venv/bin/python app\.py"   # confirmá el cwd antes de kill
+> kill <pid>
+> ```
 
 **Modo**: Siempre **LIVE** con yfinance (gratis, sin API key).
 - Con `FRED_API_KEY` → indicadores económicos en vivo
@@ -215,16 +235,54 @@ el histórico de shares/AUM de un ETF, así que se construye **hacia adelante**:
 
 ---
 
+## Riesgo geopolítico (AI-GPR) + War Lab — 2026-08-05
+
+- `gpr_store.py`: descarga el CSV diario del **AI-GPR** (Caldara & Iacoviello:
+  GPT-4o-mini puntúa artículos de NYT/WaPo/Chicago Tribune; serie diaria
+  continua desde 1960, media 100 en 1985-2019, ~5 días de retraso). Guarda el
+  archivo **entero** (15 columnas) en `data/ai_gpr_daily.csv` para poder crecer
+  a `GPR_OIL`, `THREATS/ACTS` y el desglose regional sin rehacer el histórico.
+  Job diario a las 7:00 ET en el scheduler de `app.py`.
+- **El valor mostrado es el PERCENTIL** (1985→hoy) de la media de 30 días:
+  - el crudo cambia **26,8% mediano** de un día al otro (MA30: 1,03%) — un
+    gauge sobre el crudo parpadea sin que pase nada;
+  - el min-max da **43,5** donde el percentil da **95,5**, porque el pico del
+    11-S define el rango entero; y **reescribe la historia** en cada récord
+    nuevo, con lo que el número de ayer cambia. Se guarda igual, para auditoría.
+  - cortes **no lineales** 50/75/90/97: con 20/40/60/80, "Alto o Crítico" sería
+    el 40% de los días de la historia.
+- `war_lab.py` + `/war`: cruza el índice con los 11 sectores sobre 6.960 días
+  hábiles (1998→hoy) en retorno **relativo a SPY**. Usa `data/war_prices.csv`
+  propio y NO `price_store` (ese guarda 320 barras; acá hacen falta 26 años).
+  Ojo con dos trampas que ya están resueltas y no hay que reintroducir:
+  - el spread por régimen **crudo** dice que Tecnología gana las crisis; es
+    confusión temporal (riesgo alto ≈ 2001-03 y 2022-26, y lo segundo es el
+    boom de IA). Por eso se demedia por año — ahí cae al 3º y su beta al shock
+    es la más negativa de las once;
+  - RORO y GPR son **casi ortogonales** (corr 0,035 niveles / −0,02 cambios).
+    Es un resultado, no un bug: el índice aporta info que el RORO no tiene.
+- El gauge va **separado por un divisor** en la barra de régimen, y su tooltip
+  es `position:fixed` colgado del `<body>`: `.regime` lleva `overflow:hidden` +
+  `isolation:isolate` y lo dejaba recortado y por debajo del panel RORO.
+- Fondo de `.regime` (`roro-bg.jpg`) **oculto a pedido, no borrado**: quitar el
+  `display:none` de `.regime::before` para restaurarlo.
+
+---
+
 ## Disciplina conceptual — NO romper
 
-Separa inferencia vs observación:
+Separa inferencia vs observación… y narrativa:
 
 | Capa | Modelos | Lectura | Afirmar… |
 |------|---------|---------|----------|
 | **Inferida** | RRG, CMF, RORO | "fuerza" / "presión" | NUNCA "entró/salió capital" |
 | **Observada** | Flujo ETF, COT | dinero medido | "el capital se movió" |
+| **Narrativa** | AI-GPR | contexto exógeno | NUNCA como causa de un flujo |
+
+El AI-GPR no se deriva de precios ni mide dinero: mide cobertura periodística.
+Va visualmente separado justamente para que no se lea como causa de los flujos.
 
 ---
 
 **Última actualización:** 2026-08-05
-**Estado:** ✅ Production-ready — deployado en https://flow.quantcentral.eu
+**Estado:** ✅ Production-ready — deployado en https://flow.quantcentral.eu (terminal + `/war`)

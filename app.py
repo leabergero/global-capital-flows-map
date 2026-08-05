@@ -204,5 +204,8 @@ if __name__ == "__main__":
         log.info("Scheduler deshabilitado (modo DEMO)")
 
     host = os.environ.get("HOST", "127.0.0.1")
-    port = int(os.environ.get("PORT", "5000"))
+    # 5055 y no 5000: en la máquina de desarrollo el :5000 lo ocupa el otro
+    # proyecto (Neural), igual que en el server. En producción el .service fija
+    # PORT=5001, así que este default no afecta al deploy.
+    port = int(os.environ.get("PORT", "5055"))
     app.run(host=host, port=port, debug=False)

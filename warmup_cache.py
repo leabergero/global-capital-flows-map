@@ -13,11 +13,12 @@ Resultado:
   - Cada snapshot se cachea por su TTL
   - El servidor está listo para servir <3ms inmediatamente
 """
+import os
 import sys
 import time
 import requests
 
-BASE_URL = "http://127.0.0.1:5000"
+BASE_URL = os.environ.get("BASE_URL", "http://127.0.0.1:5055")
 PERIODS = [1, 5, 20, 50, 180]
 
 print("╔═══════════════════════════════════════════════════════╗")
