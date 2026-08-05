@@ -170,10 +170,26 @@ constante, actualizada por eventos reales de mercado en vez de por tiempo:
 FMP `/etf/holdings` es premium (429 en plan gratuito). Ninguna fuente gratuita da
 el histórico de shares/AUM de un ETF, así que se construye **hacia adelante**:
 
-- `etf_flow_tracker.py`: captura shares × NAV, acumula en
-  `data/etf_flows.json`. `flujo_t = (shares_t − shares_{t-1}) × NAV_t`.
-  Fuente: **stockanalysis.com** (`/etf/{sym}/__data.json`, cobertura 43/43),
-  yfinance solo como último recurso.
+- `etf_flow_tracker.py`: captura shares × NAV en `data/etf_flows.json`.
+  `flujo_t = (shares_t − shares_{t-1}) × NAV_t`. Tres fuentes, en orden:
+  1. **SSGA** `navhist-us-en-{sym}.xlsx` — NAV history diario con Shares
+     Outstanding real y **~22 años de histórico**, la única fuente gratuita
+     que lo da. Cubre 16/43: SPY, los 11 XLx, GLD, KBE, KIE, XOP. Para estos,
+     `snapshot()` REEMPLAZA la serie entera (la fuente es autoritativa y así
+     corrige huecos sola) recortada a `MAX_KEEP=190` — la ventana más larga
+     del frontend es 180d y no miramos más atrás de 6 meses de mercado.
+  2. **stockanalysis.com** `/etf/{sym}/__data.json` — cobertura 43/43 pero
+     solo el corte de HOY, así que los 27 restantes se acumulan hacia
+     adelante. iShares (toda la clase Bonos) tiene el mismo archivo que SSGA
+     pero lo bloquea con un bot-check que devuelve HTML con
+     `Content-Type: text/csv` — no insistir, ya se probó con sesión, cookies
+     y headers de navegador.
+  3. yfinance, último recurso (ver abajo por qué).
+- `_es_split()`: un split multiplica las unidades y divide el NAV por el mismo
+  factor — el AUM no cambia, no entró un dólar. XLK partió 2:1 el 2025-12-05 y
+  sin el guard aparecía como una entrada de **47.600 millones**, más que todo
+  el flujo real del semestre. Exige las dos condiciones a la vez, así que una
+  creación grande de verdad (que no mueve el NAV) no se confunde con un split.
 - **NO usar yfinance para shares** (verificado 2026-08, rompió la métrica
   entera durante 14 días): sirve `sharesOutstanding` y `totalAssets`
   cacheados y congelados. 24/43 símbolos repetían el mismo shares día tras
