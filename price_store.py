@@ -18,6 +18,7 @@ import json
 import logging
 import math
 import os
+import time
 from concurrent.futures import ThreadPoolExecutor
 from datetime import date, datetime, timedelta
 
@@ -26,6 +27,17 @@ import yfinance
 import config
 
 log = logging.getLogger("price_store")
+
+# Reintentos ante fallo transitorio (429/timeout), mismo patrón que
+# gpr_store.descargar(). Pocos y con backoff corto: bajo MAX_WORKERS hilos
+# en paralelo, reintentar de más durante un soft-ban real solo empeoraría
+# la ráfaga contra la misma IP.
+YF_REINTENTOS = 2
+YF_BACKOFF_SEG = 1.5
+# La detección de "snapshot congelado" (ver intraday_store._check_stale) NO
+# aplica acá: este store es diario, así que su última barra tiene horas de
+# antigüedad la MAYOR parte del tiempo (fin de semana, fuera de horario) sin
+# que eso sea señal de nada — aplicarla acá solo generaba ruido falso.
 
 DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
 STORE = os.path.join(DATA_DIR, "price_history.json")
@@ -76,42 +88,52 @@ def _fetch_yf(symbol: str, days: int):
     """
     Devuelve lista ascendente de barras OHLCV:
     [{date, open, high, low, close, volume}, ...]  o []  si falla.
+    Reintenta ante error transitorio (429/timeout); no reintenta si Yahoo
+    responde vacío pero sin error (símbolo sin más historia, feriado, etc.).
     """
-    try:
-        end_date = datetime.now()
-        start_date = end_date - timedelta(days=days)
+    end_date = datetime.now()
+    start_date = end_date - timedelta(days=days)
+    yf_symbol = config.YFINANCE_SYMBOL_MAP.get(symbol, symbol)
 
-        yf_symbol = config.YFINANCE_SYMBOL_MAP.get(symbol, symbol)
-        ticker = yfinance.Ticker(yf_symbol)
-        df = ticker.history(start=start_date, end=end_date)
-
-        if df.empty:
-            log.warning("yfinance vacío %s", symbol)
-            return []
-
-        out = []
-        for date_idx, row in df.iterrows():
-            try:
-                close = float(row["Close"])
-                if math.isnan(close):
-                    # Barra del día en curso todavía sin cerrar / placeholder
-                    # de yfinance: no es un cierre real, se descarta.
-                    continue
-                out.append({
-                    "date": date_idx.strftime("%Y-%m-%d"),
-                    "open": float(row.get("Open", row.get("Close", 0)) or 0),
-                    "high": float(row.get("High", 0) or 0),
-                    "low": float(row.get("Low", 0) or 0),
-                    "close": close,
-                    "volume": float(row.get("Volume", 0) or 0),
-                })
-            except (KeyError, TypeError, ValueError):
-                continue
-
-        return out
-    except Exception as e:
-        log.warning("yfinance FAIL %s :: %s", symbol, e)
+    df = None
+    ultimo_error = None
+    for intento in range(1, YF_REINTENTOS + 1):
+        try:
+            ticker = yfinance.Ticker(yf_symbol)
+            df = ticker.history(start=start_date, end=end_date)
+            break
+        except Exception as e:
+            ultimo_error = e
+            if intento < YF_REINTENTOS:
+                time.sleep(YF_BACKOFF_SEG * intento)
+    if df is None:
+        log.warning("yfinance FAIL %s tras %d intentos :: %s", symbol, YF_REINTENTOS, ultimo_error)
         return []
+
+    if df.empty:
+        log.warning("yfinance vacío %s", symbol)
+        return []
+
+    out = []
+    for date_idx, row in df.iterrows():
+        try:
+            close = float(row["Close"])
+            if math.isnan(close):
+                # Barra del día en curso todavía sin cerrar / placeholder
+                # de yfinance: no es un cierre real, se descarta.
+                continue
+            out.append({
+                "date": date_idx.strftime("%Y-%m-%d"),
+                "open": float(row.get("Open", row.get("Close", 0)) or 0),
+                "high": float(row.get("High", 0) or 0),
+                "low": float(row.get("Low", 0) or 0),
+                "close": close,
+                "volume": float(row.get("Volume", 0) or 0),
+            })
+        except (KeyError, TypeError, ValueError):
+            continue
+
+    return out
 
 
 # ---------------------------------------------------------------------------

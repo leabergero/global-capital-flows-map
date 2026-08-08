@@ -167,8 +167,16 @@ constante, actualizada por eventos reales de mercado en vez de por tiempo:
   del SO del servidor, no en horario de mercado real):
   - `job_market_close_update` (17:00 ET, 1h post-cierre NYSE, lun-vie):
     actualiza `price_store` y recalcula+cachea `snapshot:full:{5,20,50,180}`.
-  - `job_intraday_update` (cada 15 min, 9:30–16:00 ET, lun-vie): actualiza
-    `intraday_store` y recalcula+cachea solo `snapshot:full:1`.
+  - `job_intraday_update` (cada 60 min, 9:00–16:00 ET, lun-vie): actualiza
+    `intraday_store` y recalcula+cachea solo `snapshot:full:1`. Corría cada
+    15 min (32 corridas/día × 140 símbolos ≈ 4.480 requests/día a Yahoo en
+    ráfagas regulares — patrón de soft-ban); se bajó a 1x/hora porque el
+    frontend hace auto-reload igual de seguido (`setInterval` 3600000 en
+    `static/index.html`) y una cadencia más fina era invisible para el
+    usuario. Usa `preload_cache.intraday_symbols()`, no
+    `all_symbols_with_macro()`: los símbolos de `MACRO_CARDS` no pasan nunca
+    por `intraday_store` (`compute/macro.py` usa `fmp.quote()` + histórico
+    diario), así que traerlos cada hora era gasto de cupo sin efecto.
 - `fmp_client.historical()` es ahora un delegado fino de `price_store.get()`
   (sin red en el hot path salvo la siembra lazy de un símbolo nunca visto);
   `fmp_client.historical_intraday()` lee `intraday_store` con fallback a
@@ -177,6 +185,12 @@ constante, actualizada por eventos reales de mercado en vez de por tiempo:
 - yfinance a veces devuelve la barra más reciente con OHLC en `NaN` (vela del
   día aún sin cerrar) — ambos stores la descartan explícitamente
   (`math.isnan(close)`); sin ese filtro se cuela como un cierre inválido.
+- `_fetch_yf`/`_fetch_yf_intraday` reintentan (2 intentos, backoff corto) ante
+  error transitorio de yfinance, mismo patrón que `gpr_store.descargar()`; y
+  loguean si `history_metadata.regularMarketTime` (viene gratis en la misma
+  respuesta) tiene más de `STALE_AFTER_MIN` de antigüedad — señal de que
+  Yahoo está sirviendo un snapshot congelado (soft-ban), no de que no pasó
+  nada. Mismo patrón de detección que `ticker-widget` (`TickerScraper.is_stale`).
 - `get()` en ambos stores cachea el dict completo en memoria (invalidado por
   `mtime` del archivo) — sin esto, cada llamada (docenas por snapshot: una
   por símbolo del árbol, más RRG, más ROTO) releía y re-parseaba el JSON

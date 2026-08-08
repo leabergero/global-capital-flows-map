@@ -73,12 +73,16 @@ def _init_scheduler():
         replace_existing=True,
     )
 
-    # Job intradía: cada 15 min en horario de mercado, lunes-viernes.
+    # Job intradía: cada 60 min en horario de mercado, lunes-viernes. Antes
+    # corría cada 15 min (32 corridas/día x 140 símbolos ~ 4.480 requests/día
+    # a Yahoo, en ráfagas regulares -> patrón típico de soft-ban). El frontend
+    # solo hace auto-reload 1x/hora (static/index.html, setInterval 3600000),
+    # así que una cadencia más fina que esa es invisible para el usuario.
     _scheduler.add_job(
         preload_cache.job_intraday_update,
         'cron',
         hour='9-16',
-        minute='*/15',
+        minute=0,
         day_of_week='0-4',
         id='intraday_update_job',
         replace_existing=True,
@@ -110,7 +114,7 @@ def _init_scheduler():
 
     try:
         _scheduler.start()
-        log.info("Scheduler iniciado: cierre 17:00 ET + intradía c/15min + "
+        log.info("Scheduler iniciado: cierre 17:00 ET + intradía c/60min + "
                  "captura ETF 18:00 ET + AI-GPR 7:00 ET")
     except Exception as e:
         log.error("Error al iniciar scheduler: %s", e)

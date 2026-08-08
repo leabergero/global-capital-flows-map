@@ -21,12 +21,38 @@ import math
 import os
 import time
 from concurrent.futures import ThreadPoolExecutor
+from datetime import datetime
+from zoneinfo import ZoneInfo
 
 import yfinance
 
 import config
 
 log = logging.getLogger("intraday_store")
+
+# Mismos parámetros y mismo motivo que price_store.py.
+YF_REINTENTOS = 2
+YF_BACKOFF_SEG = 1.5
+# A diferencia de price_store (diario, "viejo" la mayor parte del tiempo por
+# diseño), acá SÍ es señal real: si el mercado NYSE está abierto y el dato
+# más nuevo que sirvió Yahoo tiene más de esto de antigüedad, no es que "no
+# pasó nada" — es que Yahoo empezó a servir un snapshot congelado (soft-ban).
+STALE_AFTER_MIN = 60
+_NYSE_TZ = ZoneInfo("America/New_York")
+
+
+def _nyse_open_now():
+    """True si NYSE está en sesión regular ahora (aprox., sin feriados).
+
+    Guard barato para no confundir "mercado cerrado" con "soft-ban": el job
+    solo corre en este horario, pero el preload síncrono del arranque
+    (`app.py`) lo dispara también fuera de horario/fin de semana.
+    """
+    now = datetime.now(_NYSE_TZ)
+    if now.weekday() >= 5:
+        return False
+    minutes = now.hour * 60 + now.minute
+    return 9 * 60 + 30 <= minutes <= 16 * 60
 
 DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
 STORE = os.path.join(DATA_DIR, "intraday_bars.json")
@@ -64,18 +90,46 @@ def _save(store):
     _mem_cache_mtime = os.path.getmtime(STORE)
 
 
+def _check_stale(ticker, symbol):
+    """Loguea si Yahoo sirvió un dato viejo con el mercado abierto — señal de
+    snapshot congelado (soft-ban), no de que no pasó nada."""
+    if not _nyse_open_now():
+        return
+    meta = getattr(ticker, "history_metadata", None) or {}
+    ts = meta.get("regularMarketTime")
+    if not isinstance(ts, (int, float)):
+        return
+    age_min = (time.time() - ts) / 60
+    if age_min > STALE_AFTER_MIN:
+        log.warning("posible soft-ban de Yahoo: %s con dato de hace %.0f min (mercado abierto)", symbol, age_min)
+
+
 def _fetch_yf_intraday(symbol):
     """
     Velas de 15 min del día en curso (+ margen de días previos).
     [{date: <ISO completo con hora>, open, high, low, close, volume}, ...]
-    ascendente, o [] si falla.
+    ascendente, o [] si falla. Reintenta ante error transitorio (429/timeout).
     """
-    try:
-        yf_symbol = config.YFINANCE_SYMBOL_MAP.get(symbol, symbol)
-        ticker = yfinance.Ticker(yf_symbol)
-        df = ticker.history(period=config.INTRADAY_FETCH_PERIOD,
-                             interval=config.INTRADAY_INTERVAL)
+    yf_symbol = config.YFINANCE_SYMBOL_MAP.get(symbol, symbol)
 
+    df = None
+    ultimo_error = None
+    for intento in range(1, YF_REINTENTOS + 1):
+        try:
+            ticker = yfinance.Ticker(yf_symbol)
+            df = ticker.history(period=config.INTRADAY_FETCH_PERIOD,
+                                 interval=config.INTRADAY_INTERVAL)
+            _check_stale(ticker, symbol)
+            break
+        except Exception as e:
+            ultimo_error = e
+            if intento < YF_REINTENTOS:
+                time.sleep(YF_BACKOFF_SEG * intento)
+    if df is None:
+        log.warning("yfinance intradía FAIL %s tras %d intentos :: %s", symbol, YF_REINTENTOS, ultimo_error)
+        return []
+
+    try:
         if df.empty:
             log.warning("yfinance intradía vacío %s", symbol)
             return []
@@ -99,7 +153,7 @@ def _fetch_yf_intraday(symbol):
 
         return out
     except Exception as e:
-        log.warning("yfinance intradía FAIL %s :: %s", symbol, e)
+        log.warning("yfinance intradía parseo FAIL %s :: %s", symbol, e)
         return []
 
 

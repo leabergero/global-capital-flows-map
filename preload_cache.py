@@ -6,7 +6,7 @@ El flujo:
   1. Job de cierre (17:00 ET, 1h post-cierre NYSE, lun-vie): actualiza el
      store diario de precios (price_store) para TODOS los símbolos y
      recalcula+cachea los snapshots de 5d/20d/50d/180d.
-  2. Job intradía (cada 15 min, 9:30-16:00 ET, lun-vie): actualiza el store
+  2. Job intradía (cada 60 min, 9:00-16:00 ET, lun-vie): actualiza el store
      de velas de 15 min (intraday_store) y recalcula+cachea el snapshot 1d.
   3. Resultado: /api/snapshot SIEMPRE sirve desde caché ya caliente — nadie
      paga el costo de recomputar en su propia request, salvo que un job haya
@@ -51,6 +51,27 @@ def all_symbols_with_macro():
     return sorted(symbols)
 
 
+def intraday_symbols():
+    """Símbolos que de verdad consumen `intraday_store` en period=1.
+
+    A diferencia de `all_symbols_with_macro()` (usado por el job de cierre),
+    NO incluye los símbolos de MACRO_CARDS: esas tarjetas salen de
+    `fmp.quote()` (vivo) + `fmp.historical()` (diario) en `compute/macro.py`,
+    nunca pasan por `intraday_store` — traerlos acá era puro gasto de cupo
+    contra Yahoo sin ningún efecto visible. Sí quedan los componentes RORO
+    (`roro.components()` recibe el `lookup` de period=1) y el benchmark cross
+    del RRG (ACWI, se pide vía `lookup` directo aunque no esté en el árbol).
+    """
+    symbols = set(universe.all_symbols())
+    symbols.add(config.BENCH_CROSS)
+    for comp in config.RORO_COMPONENTS:
+        if comp.get("a"):
+            symbols.add(comp["a"])
+        if comp.get("b"):
+            symbols.add(comp["b"])
+    return sorted(symbols)
+
+
 def job_market_close_update():
     """
     Job de cierre de mercado: 17:00 ET, lunes a viernes (1h post-cierre NYSE).
@@ -76,13 +97,14 @@ def job_market_close_update():
 
 def job_intraday_update():
     """
-    Job intradía: cada 15 min entre 9:30 y 16:00 ET, lunes a viernes.
+    Job intradía: cada 60 min entre 9:00 y 16:00 ET, lunes a viernes.
     Actualiza el store de velas de 15 min y recalcula + cachea solo el
-    snapshot de 1d.
+    snapshot de 1d. Usa `intraday_symbols()`, no `all_symbols_with_macro()`
+    (ver docstring de esa función).
     """
     import snapshot_builder
     try:
-        symbols = all_symbols_with_macro()
+        symbols = intraday_symbols()
         ok, fail, elapsed = intraday_store.update(symbols)
         log.info("Intradía: %d OK, %d fail en %.1fs", ok, fail, elapsed)
 
