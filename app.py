@@ -59,6 +59,11 @@ def _init_scheduler():
         log.info("Precarga inicial: actualizando stores de precios...")
         preload_cache.job_market_close_update()
         preload_cache.job_intraday_update()
+        # El AI-GPR solo se actualizaba por el cron de las 7:00 ET: si el
+        # proceso no estaba vivo a esa hora (máquina de desarrollo apagada,
+        # deploy a media mañana) el gauge quedaba mostrando el corte del día
+        # que el CSV tuviera en disco, sin recuperarse hasta el día siguiente.
+        gpr_store.update()
     except Exception as e:
         log.warning("Precarga inicial no completó: %s (continuando)", e)
 

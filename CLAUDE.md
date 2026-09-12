@@ -131,6 +131,12 @@ y cert propios.
 - Frontend vanilla JS + SVG (sin build). Auto-reload cada 1 hora.
 - Carga inteligente: 5d inmediatamente, 20d/50d en background.
 - Copyright: Leandro R. Bergero, Msc Finance & Banking BSM-UPF.
+- RRG con **zoom dinámico**: la escala se ajusta a los datos (simétrica
+  alrededor de 100 en cada eje, para que los 4 cuadrantes conserven el mismo
+  área) en vez de los límites fijos 94..108 / 96..105, con los que los datos
+  reales (~97.7..102.3) ocupaban un 33% del eje X. Ticks numéricos de RS-Ratio
+  en ambos ejes: sin ellos el encuadre variable no se puede leer. NO son
+  porcentajes — el RS-Ratio está normalizado, rotularlo "% vs SPY" sería falso.
 - Fase 4: store de precios con ventana fija (320 barras diarias, 3 días de
   velas de 15min para 1d) + cron real de mercado (cierre 17:00 ET, intradía
   c/15min 9:30–16:00 ET) — ver sección dedicada más abajo. Las 5 ventanas
@@ -182,6 +188,18 @@ constante, actualizada por eventos reales de mercado en vez de por tiempo:
   `fmp_client.historical_intraday()` lee `intraday_store` con fallback a
   `price_store` si aún no corrió el job del día (server recién levantado,
   deploy fuera de horario de mercado).
+- `update_today()` reconcilia **todas** las fechas que traiga el fetch (mismo
+  patrón que `intraday_store.update`), no solo la barra de HOY. Antes exigía
+  `latest["date"] == today` y si no, descartaba el fetch entero: una corrida
+  fuera del horario de cierre (o la precarga del arranque a media mañana) daba
+  "140 fail" y, peor, un hueco no se recuperaba NUNCA — la base local quedó
+  clavada 7 semanas en 2026-07-23. Si el hueco supera 5 días calendario se
+  re-siembra el símbolo completo, porque pedir 5 días no lo tapa.
+  Self-check sin red: `python price_store.py`.
+- `gpr_store.update()` también corre en la precarga del arranque
+  (`app._init_scheduler`), no solo en el cron de las 7:00 ET: si el proceso no
+  estaba vivo a esa hora, el gauge se quedaba con el corte viejo del CSV hasta
+  el día siguiente.
 - yfinance a veces devuelve la barra más reciente con OHLC en `NaN` (vela del
   día aún sin cerrar) — ambos stores la descartan explícitamente
   (`math.isnan(close)`); sin ese filtro se cuela como un cierre inválido.
@@ -298,5 +316,5 @@ Va visualmente separado justamente para que no se lea como causa de los flujos.
 
 ---
 
-**Última actualización:** 2026-08-05
+**Última actualización:** 2026-09-12
 **Estado:** ✅ Production-ready — deployado en https://flow.quantcentral.eu (terminal + `/war`)

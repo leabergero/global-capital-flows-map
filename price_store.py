@@ -139,6 +139,14 @@ def _fetch_yf(symbol: str, days: int):
 # ---------------------------------------------------------------------------
 # Lectura (hot path — nunca pega a red salvo la primera vez que se ve un símbolo)
 # ---------------------------------------------------------------------------
+def _gap_dias(ultima, today):
+    """Días calendario entre la última barra en disco y hoy (grande si no parsea)."""
+    try:
+        return (date.fromisoformat(today) - date.fromisoformat(ultima)).days
+    except (TypeError, ValueError):
+        return 9999
+
+
 def _seed(symbol):
     """Primera vez que se ve un símbolo: siembra DAILY_STORE_BARS barras."""
     bars = _fetch_yf(symbol, config.DAILY_STORE_SEED_DAYS)
@@ -164,8 +172,10 @@ def get(symbol):
 # ---------------------------------------------------------------------------
 def update_today(symbols, today=None):
     """
-    Agrega el cierre de hoy para cada símbolo (idempotente: si ya hay entrada
-    de hoy, la reemplaza) y poda a DAILY_STORE_BARS. Un solo _load()/_save()
+    Reconcilia las barras que traiga el fetch para cada símbolo (idempotente:
+    una fecha ya presente se reemplaza) y poda a DAILY_STORE_BARS. No exige
+    que haya barra de HOY: si la hubiera exigido, cualquier corrida fuera del
+    horario de cierre descartaría datos válidos. Un solo _load()/_save()
     para todos los símbolos (evita condición de carrera read-modify-write
     entre hilos); el fetch de red sí se paraleliza.
 
@@ -180,7 +190,11 @@ def update_today(symbols, today=None):
     def _fetch_one(sym):
         # Símbolo nunca visto: sembrar histórico completo (no solo el cierre
         # de hoy), si no quedaría con una única barra en vez de 260.
-        is_new = not store.get(sym)
+        # Símbolo con hueco (máquina apagada, server caído a la hora del job):
+        # también se re-siembra, porque pedir 5 días no tapa un hueco más largo
+        # y la base quedaría clavada en la última fecha buena para siempre.
+        prev = store.get(sym)
+        is_new = not prev or _gap_dias(prev[-1].get("date"), today) > 5
         days = config.DAILY_STORE_SEED_DAYS if is_new else 5
         return sym, is_new, _fetch_yf(sym, days)
 
@@ -196,19 +210,68 @@ def update_today(symbols, today=None):
                     store[sym] = bars[-config.DAILY_STORE_BARS:]
                     ok += 1
                     continue
-                latest = bars[-1]
-                if latest["date"] != today:
-                    # yfinance todavía no publicó el cierre de hoy (delay,
-                    # feriado no detectado): no forzar una entrada falsa.
-                    fail += 1
-                    continue
-                series = [b for b in store.get(sym, []) if b["date"] != today]  # idempotencia
-                series.append(latest)
-                series.sort(key=lambda b: b["date"])
-                store[sym] = series[-config.DAILY_STORE_BARS:]
+                # Reconciliar TODAS las fechas del fetch (mismo patrón que
+                # intraday_store.update). Antes se exigía que la última barra
+                # fuera de HOY y si no, se descartaba el fetch entero: una
+                # corrida antes del cierre, un feriado o un reinicio fuera de
+                # horario tiraban barras válidas, y el hueco no se recuperaba
+                # nunca (140 símbolos clavados 7 semanas en la máquina local).
+                # Las del fetch pisan a las de disco -> sigue siendo idempotente
+                # y corrige una barra provisoria guardada con el mercado abierto.
+                merged = {b["date"]: b for b in store.get(sym, [])}
+                merged.update({b["date"]: b for b in bars})
+                store[sym] = [merged[d] for d in sorted(merged)][-config.DAILY_STORE_BARS:]
                 ok += 1
     except Exception as e:
         log.error("update_today abortado: %s", e)
 
     _save(store)
     return ok, fail, time.time() - start
+
+
+if __name__ == "__main__":
+    # Self-check sin red: el caso que clavó la base (fetch sin la barra de HOY,
+    # y hueco largo por máquina apagada) tiene que quedar cubierto.
+    import tempfile
+
+    def _bar(d, c=1.0):
+        return {"date": d, "open": c, "high": c, "low": c, "close": c, "volume": 0}
+
+    DATA_DIR = tempfile.mkdtemp()
+    STORE = os.path.join(DATA_DIR, "price_history.json")
+    HOY = "2026-09-12"
+    pedidos = {}
+
+    def _fake(symbol, days):
+        pedidos[symbol] = days
+        # yfinance todavía no publicó la barra de HOY (job corriendo antes del
+        # cierre, o feriado): la más reciente es la de la rueda anterior.
+        return [_bar("2026-09-10", 10), _bar("2026-09-11", 11)]
+
+    _fetch_yf = _fake
+
+    # 1) Al día salvo la última rueda -> las barras entran igual, sin ser de hoy.
+    _save({"AAA": [_bar("2026-09-09", 9)]})
+    ok, fail, _ = update_today(["AAA"], today=HOY)
+    assert (ok, fail) == (1, 0), (ok, fail)
+    assert [b["date"] for b in get("AAA")] == ["2026-09-09", "2026-09-10", "2026-09-11"]
+    assert pedidos["AAA"] == 5, "sin hueco tiene que pedir el fetch corto"
+
+    # 2) Idempotencia: repetir la corrida no duplica y pisa con el valor nuevo.
+    update_today(["AAA"], today=HOY)
+    assert len(get("AAA")) == 3 and get("AAA")[-1]["close"] == 11
+
+    # 3) Hueco largo -> re-siembra completa (pedir 5 días no lo taparía).
+    st = _load()
+    st["BBB"] = [_bar("2026-07-23", 7)]
+    _save(st)
+    update_today(["BBB"], today=HOY)
+    assert pedidos["BBB"] == config.DAILY_STORE_SEED_DAYS, "con hueco tiene que re-sembrar"
+    assert [b["date"] for b in get("BBB")] == ["2026-09-10", "2026-09-11"]
+
+    # 4) Fetch vacío = fail, y no pisa lo que ya había.
+    _fetch_yf = lambda symbol, days: []
+    ok, fail, _ = update_today(["AAA"], today=HOY)
+    assert (ok, fail) == (0, 1) and len(get("AAA")) == 3
+
+    print("price_store self-check OK")
