@@ -72,11 +72,6 @@ echo "5️⃣  Verificando estado..."
 curl -s http://127.0.0.1:5001/api/health || echo "⚠️  Todavía sin responder tras 10 min — revisar journalctl -u global-flow-matrix.service"
 echo ""
 
-echo "6️⃣  Precalentando caché de snapshots ensamblados..."
-source .venv/bin/activate
-python warmup_cache.py
-echo ""
-
 echo "════════════════════════════════════════════════════════════"
 echo "  ✅ DEPLOYMENT COMPLETADO EXITOSAMENTE"
 echo "════════════════════════════════════════════════════════════"

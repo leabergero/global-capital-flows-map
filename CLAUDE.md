@@ -90,6 +90,11 @@ y cert propios.
   y ese es el usuario de la instancia), repo en `/home/ubuntu/global-flow-matrix`.
   `bash DEPLOY_ORACLE.sh` automatiza `git pull` + `pip install` + `sudo systemctl
   restart global-flow-matrix.service` + espera activa del health-check.
+  Ya NO llama a `warmup_cache.py` (borrado): precalentaba las 5 ventanas por
+  HTTP contra `127.0.0.1:5055` — el puerto de desarrollo, no el `PORT=5001`
+  del `.service` — así que fallaba entero e imprimía "✅ Caché precalentado"
+  igual. Era redundante desde la Fase 4: `app._init_scheduler` cachea las 5
+  ventanas de forma síncrona antes de que Flask acepte conexiones.
 - `app.py` lee `HOST`/`PORT` de variables de entorno (default `127.0.0.1:5000`
   igual que local); en el server el `.service` fija `PORT=5001`.
 - `config.MAX_WORKERS` también por env (default `8`); en el server va en `3`

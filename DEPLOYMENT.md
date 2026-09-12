@@ -57,7 +57,7 @@ sudo systemctl status global-flow-matrix.service
 ```bash
 # Esperar a que el servidor esté listo (~10 seg)
 source .venv/bin/activate
-python warmup_cache.py
+# (ya no hace falta: el arranque del servicio precalienta las 5 ventanas)
 ```
 
 **Salida esperada**:
@@ -94,7 +94,7 @@ curl -w "Latency: %{time_total}s\n" \
 | SSH + git pull | 1 min | `git pull origin main` |
 | pip install | 2 min | `pip install -r requirements.txt` |
 | Restart service | 30 seg | `sudo systemctl restart ...` |
-| Warmup caché | 1-2 min | `python warmup_cache.py` |
+| Warmup caché | — | lo hace `app._init_scheduler` en el arranque |
 | **Total** | **~5 min** | |
 
 ---
@@ -145,7 +145,6 @@ sudo systemctl restart global-flow-matrix.service
 ```
 Nuevos:
   + preload_cache.py (108 líneas) — módulo de precarga
-  + warmup_cache.py (67 líneas) — script de precalcule
   + DEPLOYMENT.md (este archivo)
 
 Modificados:
@@ -223,8 +222,7 @@ a3c593b Fase 1: Precarga automática de caché
 - [ ] `pip install -r requirements.txt` completado
 - [ ] `sudo systemctl restart` completado
 - [ ] Esperados 10 segundos para que inicie
-- [ ] `python warmup_cache.py` ejecutado
-- [ ] Todos los períodos OK en warmup
+- [ ] Todos los períodos responden (`/api/snapshot?period=1|5|20|50|180`)
 - [ ] `/api/health` retorna live
 - [ ] `/api/snapshot?period=5` <3ms
 - [ ] Navegador: http://flow.quantcentral.eu carga
