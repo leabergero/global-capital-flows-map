@@ -954,6 +954,7 @@ function renderRRG(setKey){
   s+=`<text x="12" y="${H/2}" fill="${C.muted}" font-size="10" text-anchor="middle" font-family="monospace" transform="rotate(-90 12 ${H/2})">RS-Momentum →</text>`;
 
   // Renderizar cada sector
+  const labels=[];
   data.forEach(d=>{
     const col=quadColor(d.rs,d.mom);
     const px=sx(d.rs), py=sy(d.mom);
@@ -996,7 +997,43 @@ function renderRRG(setKey){
     else if(d.rs<100 && d.mom<100) quadName='REZAGADO';
     else if(d.rs<100 && d.mom>=100) quadName='MEJORANDO';
 
-    s+=`<text x="${px+(px>W*0.62?-7:7)}" y="${py-6}" text-anchor="${px>W*0.62?'end':'start'}" fill="${col}" font-size="9" font-family="monospace" font-weight="600" opacity="0.9" class="rrg-sector-label" data-sector="${d.name}" data-quad="${quadName}" style="cursor:pointer">${trName(d.name)}</text>`;
+    // La etiqueta no se dibuja acá: se acumula y se ubica al final, cuando ya
+    // se conocen todas las posiciones (ver dodge abajo).
+    const alaIzq = px > W*0.62;
+    labels.push({name:d.name, quad:quadName, col, px, py,
+                 x:px+(alaIzq?-7:7), y:py-6, anchor:alaIzq?'end':'start',
+                 text:trName(d.name)});
+  });
+
+  // Dodge de etiquetas. Varios sectores caen casi en el mismo punto (Materiales,
+  // Industriales e Inmobiliario se encimaban y el texto quedaba ilegible) y una
+  // etiqueta dibujada dentro del forEach no puede saber qué tiene alrededor.
+  // Se prueban desplazamientos verticales alternos y se toma la primera ranura
+  // libre; si no hay ninguna, queda donde estaba (peor caso = lo de antes).
+  // ponytail: greedy vertical, alcanza para 11 etiquetas. Si algún día son 40,
+  // va a hacer falta repulsión de verdad.
+  const CHW=5.42, LBH=9;            // ancho de char y alto de línea a font-size 9
+  const puestas=[];
+  labels.sort((a,b)=>a.y-b.y).forEach(L=>{
+    const w=L.text.length*CHW;
+    L.x0 = L.anchor==='end' ? L.x-w : L.x;
+    L.x1 = L.x0+w;
+    for(let k=0;k<13;k++){
+      const dy=(k%2?1:-1)*Math.ceil(k/2)*LBH;  // 0, -9, +9, -18, +18, ...
+      const y=L.y+dy;
+      if(y<30 || y>H-14) continue;             // fuera del panel (H-14 deja el
+                                               // renglon de los cuadrantes libre)
+      if(puestas.some(o=>Math.abs(o.y-y)<LBH && o.x0<L.x1 && L.x0<o.x1)) continue;
+      L.dy=dy; L.y=y; break;
+    }
+    puestas.push(L);
+  });
+  puestas.forEach(L=>{
+    // Guia hasta el punto cuando la etiqueta se corrio: sin ella, una etiqueta
+    // desplazada 27px se lee como si fuera del sector de al lado.
+    if(Math.abs(L.dy||0)>LBH)
+      s+=`<line x1="${L.px}" y1="${L.py}" x2="${L.x}" y2="${(L.y-3).toFixed(1)}" stroke="${L.col}" stroke-width="0.5" opacity="0.35" data-sector="${L.name}"/>`;
+    s+=`<text x="${L.x}" y="${L.y}" text-anchor="${L.anchor}" fill="${L.col}" font-size="9" font-family="monospace" font-weight="600" opacity="0.9" class="rrg-sector-label" data-sector="${L.name}" data-quad="${L.quad}" style="cursor:pointer">${L.text}</text>`;
   });
 
   elRRG.innerHTML=s;

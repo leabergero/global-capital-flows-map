@@ -142,6 +142,12 @@ y cert propios.
   reales (~97.7..102.3) ocupaban un 33% del eje X. Ticks numéricos de RS-Ratio
   en ambos ejes: sin ellos el encuadre variable no se puede leer. NO son
   porcentajes — el RS-Ratio está normalizado, rotularlo "% vs SPY" sería falso.
+  Las etiquetas de sector llevan **dodge vertical**: se acumulan durante el
+  render y se ubican al final, cuando ya se conocen todas las posiciones (una
+  etiqueta dibujada en el acto no sabe qué tiene alrededor). Si se corre más de
+  un renglón, se le dibuja una guía hasta su punto. Self-check sobre el DOM
+  renderizado (no sobre una copia del algoritmo): `python check_rrg_labels.py`,
+  con el server levantado y chromium en el PATH.
 - Fase 4: store de precios con ventana fija (320 barras diarias, 3 días de
   velas de 15min para 1d) + cron real de mercado (cierre 17:00 ET, intradía
   c/15min 9:30–16:00 ET) — ver sección dedicada más abajo. Las 5 ventanas
