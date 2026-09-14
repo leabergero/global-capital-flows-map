@@ -207,6 +207,12 @@ constante, actualizada por eventos reales de mercado en vez de por tiempo:
   clavada 7 semanas en 2026-07-23. Si el hueco supera 5 días calendario se
   re-siembra el símbolo completo, porque pedir 5 días no lo tapa.
   Self-check sin red: `python price_store.py`.
+- Los LEDs de frescura (`updateLEDs` en `static/index.html`) comparan
+  `meta.generated` contra el **último job programado** para el período activo
+  (1d: cada hora 9–16 ET; resto: 17:00 ET; lun-vie), NO contra "hace <1h":
+  con esa regla las ventanas diarias quedaban ámbar todo el día con el dato al
+  día. Si se cambia el horario de un job en `app.py`, actualizar ahí también.
+  No conoce feriados NYSE (ámbar hasta el próximo cierre).
 - `gpr_store.update()` también corre en la precarga del arranque
   (`app._init_scheduler`), no solo en el cron de las 7:00 ET: si el proceso no
   estaba vivo a esa hora, el gauge se quedaba con el corte viejo del CSV hasta
