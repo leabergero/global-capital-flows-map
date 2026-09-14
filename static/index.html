@@ -1193,8 +1193,22 @@ function updateLEDs(){
     const ageHours=(now-genTime)/(1000*60*60);
     return ageHours;
   };
+  // "live" = generado después del último job que DEBÍA regenerarlo (app.py):
+  // 1d cada hora 9–16 ET, el resto al cierre 17:00 ET, lun-vie. Con "<1h" las
+  // ventanas diarias quedaban ámbar todo el día aunque estuvieran al día.
+  // ponytail: no conoce feriados NYSE — un feriado se ve ámbar hasta el próximo cierre.
+  const lastScheduledRun=()=>{
+    const fmt=new Intl.DateTimeFormat('en-US',{timeZone:'America/New_York',weekday:'short',hour:'numeric',hourCycle:'h23'});
+    let t=Math.floor((Date.now()-15*60000)/3600000)*3600000;  // 15min de gracia: el job tarda ~1-2min
+    for(let i=0;i<24*8;i++,t-=3600000){
+      const p=Object.fromEntries(fmt.formatToParts(t).map(x=>[x.type,x.value]));
+      const h=+p.hour, wd=!['Sat','Sun'].includes(p.weekday);
+      if(wd&&(rrgPeriod===1?h>=9&&h<=16:h===17))return t;
+    }
+    return 0;
+  };
   const ageHours=getDataAge();
-  const isRecent=ageHours!==null&&ageHours<1;
+  const isRecent=ageHours!==null&&new Date(STATE.meta.generated).getTime()>=lastScheduledRun();
   const isStale=ageHours!==null&&ageHours>=1&&ageHours<168;
 
   const specs=[
@@ -1407,7 +1421,7 @@ async function changePeriodWithAnimation(newPeriod){
     renderRRG(rrgSet);
     renderHeatmap();
     renderBars('roroBars',STATE.roro||[],1.5,r=>(r[1]>=0?'+':'')+r[1].toFixed(1));
-    renderSpyTlt();
+    renderSpyTlt();updateLEDs();
     document.getElementById('rrgTailLabel').textContent=tr('rrg_tail_tpl').replace('{p}',rrgPeriod);
     setLoadingStatus(tr('loading_done'));
     setTimeout(()=>setLoadingStatus(''),2000);
