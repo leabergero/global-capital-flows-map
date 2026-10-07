@@ -154,6 +154,18 @@ y cert propios.
   quedan precacheadas antes de que el usuario entre, en vez de recomputarse
   on-demand con TTL de 1h.
 
+- **Rediseño 2026-10** ("terminal institucional", ex-lab 3): fondo OLED,
+  Fira Sans/Fira Code (Google Fonts), color reservado al dato, sin glows salvo
+  LEDs. Barra superior fija con UN selector de ventana global (`#periodSeg`;
+  `#periodSegHM` sigue en el DOM oculto porque el JS lo sincroniza), cinta macro
+  (`#tick`, se rellena envolviendo `renderMacro` en el script del final),
+  fila de estado Régimen · SPY/10Y · GPR, idiomas en texto (sin banderas emoji).
+  Los IDs y el JS de render son los mismos de antes: el rediseño es CSS + HTML.
+- **Labs de diseño**: `?lab=N` sirve `static/{index,war}.labN.html` si existe
+  (`app._page`), si no la página de producción. Los `.labN.html` NO se
+  versionan: se prueban en local y, al aprobarse, se copian sobre `index.html`
+  / `war.html` quitando la etiqueta LAB y los `?lab=` de los enlaces.
+
 ---
 
 ## Store de precios — ventana fija + cron real de mercado (Fase 4)
@@ -310,11 +322,11 @@ el histórico de shares/AUM de un ETF, así que se construye **hacia adelante**:
     es la más negativa de las once;
   - RORO y GPR son **casi ortogonales** (corr 0,035 niveles / −0,02 cambios).
     Es un resultado, no un bug: el índice aporta info que el RORO no tiene.
-- El gauge va **separado por un divisor** en la barra de régimen, y su tooltip
-  es `position:fixed` colgado del `<body>`: `.regime` lleva `overflow:hidden` +
-  `isolation:isolate` y lo dejaba recortado y por debajo del panel RORO.
-- Fondo de `.regime` (`roro-bg.jpg`) **oculto a pedido, no borrado**: quitar el
-  `display:none` de `.regime::before` para restaurarlo.
+- El gauge va en **su propia tarjeta** de la fila de estado (separado del
+  régimen), y su tooltip es `position:fixed` colgado del `<body>` (`#gprTip`,
+  ubicado por JS): dentro de la tarjeta quedaba recortado por los paneles vecinos.
+- El rediseño de 2026-10 sacó el fondo de `.regime` (`roro-bg.jpg`, que ya
+  estaba oculto a pedido); el archivo sigue en `static/` por si se quiere volver.
 
 ---
 
@@ -333,5 +345,5 @@ Va visualmente separado justamente para que no se lea como causa de los flujos.
 
 ---
 
-**Última actualización:** 2026-09-12
+**Última actualización:** 2026-10-07
 **Estado:** ✅ Production-ready — deployado en https://flow.quantcentral.eu (terminal + `/war`)

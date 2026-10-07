@@ -4,72 +4,98 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>War Lab · Global Flow Matrix</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Fira+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
+  /* mismos tokens que index.html */
   :root{
-    --bg:#171821; --surface:#1f2129; --surface2:#272934; --border:#363a47;
-    --text:#dcdde3; --muted:#8b8fa0;
-    --blue:#7a9ec8; --green:#6dd26d; --amber:#e8a847; --purple:#9885b8; --red:#ff6b6b;
-    --mono:ui-monospace,"SF Mono","JetBrains Mono","Cascadia Code",Menlo,Consolas,monospace;
-    --sans:"Inter",ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    --bg:#0a0c10; --surface:#11141a; --surface2:#181c24; --surface3:#1f2430;
+    --border:#232833; --border2:#2f3644;
+    --text:#e7eaf0; --muted:#8c95a8; --faint:#5d6578;
+    --blue:#5aa2ff; --green:#2fd49a; --amber:#f2b544; --purple:#a78bfa; --red:#ff5d6e;
+    --mono:"Fira Code",ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+    --sans:"Fira Sans",ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    --r:10px; --gap:14px;
   }
   *{box-sizing:border-box}
   html,body{margin:0;background:var(--bg);color:var(--text);font-family:var(--sans);
-    font-size:14px;line-height:1.45;-webkit-font-smoothing:antialiased}
-  @keyframes fadeIn{from{opacity:0}to{opacity:1}}
-  .wrap{max-width:1320px;margin:0 auto;padding:18px 18px 60px}
-  header{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;
-    border-bottom:1px solid var(--border);padding-bottom:12px;margin-bottom:16px}
-  .brand{font-family:var(--mono);font-size:13px;letter-spacing:.18em;color:var(--muted);
-    text-transform:uppercase}
-  h1{font-size:20px;font-weight:600;margin:0;letter-spacing:-.01em}
-  .back{margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--blue);
-    text-decoration:none;border:1px solid var(--border);border-radius:4px;padding:4px 10px}
-  .back:hover{border-color:var(--blue)}
-  .panel{background:var(--surface);border:1px solid var(--border);border-radius:8px;
-    padding:14px 16px;margin-bottom:16px;animation:fadeIn .6s ease-out}
-  .panel-title{font-family:var(--mono);font-size:11px;letter-spacing:.14em;
-    text-transform:uppercase;color:var(--muted);display:block;margin-bottom:4px}
-  .panel-sub{font-size:12px;color:var(--muted);margin-bottom:14px;max-width:900px}
-  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+    font-size:14px;line-height:1.55;-webkit-font-smoothing:antialiased}
+  body{background:radial-gradient(1100px 480px at 85% -10%,rgba(255,93,110,.07),transparent 60%),
+    radial-gradient(900px 400px at 0% 0%,rgba(242,181,68,.05),transparent 60%),var(--bg)}
+  :focus-visible{outline:2px solid var(--blue);outline-offset:2px;border-radius:4px}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+  @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+  .wrap{max-width:1320px;margin:0 auto;padding:0 20px 60px}
+  .topbar{position:sticky;top:0;z-index:60;display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+    padding:12px 20px;margin:0 -20px 22px;background:rgba(10,12,16,.82);
+    backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid var(--border)}
+  .logo{display:flex;align-items:center;gap:10px;text-decoration:none;color:inherit}
+  .logo svg{width:28px;height:28px;flex:none}
+  .logo-txt{display:flex;flex-direction:column;line-height:1.1}
+  .brand{font-family:var(--mono);font-size:10px;letter-spacing:.2em;color:var(--red);text-transform:uppercase}
+  h1{font-size:16px;font-weight:600;margin:0}
+  .back{margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--blue);text-decoration:none;
+    border:1px solid rgba(90,162,255,.35);border-radius:999px;padding:5px 12px;transition:background .15s,border-color .15s}
+  .back:hover{background:rgba(90,162,255,.12);border-color:var(--blue)}
+  .intro{max-width:780px;margin:0 0 22px}
+  .intro h2{font-size:26px;font-weight:600;letter-spacing:-.015em;margin:0 0 6px;line-height:1.2}
+  .intro p{color:var(--muted);margin:0;font-size:14px}
+  .panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);
+    padding:18px 20px;margin-bottom:var(--gap);animation:fadeIn .45s ease-out both}
+  .panel-title{font-family:var(--mono);font-size:11px;font-weight:500;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--text);display:block;margin-bottom:6px}
+  .panel-sub{font-size:12px;color:var(--muted);margin-bottom:16px;max-width:900px}
+  .panel-sub b{color:var(--text);font-weight:600}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap)}
+  .grid2>.panel{margin-bottom:var(--gap)}
   @media(max-width:980px){.grid2{grid-template-columns:1fr}}
-  .hero{display:flex;align-items:center;gap:22px;flex-wrap:wrap}
-  .gauge-num{font-size:44px;font-weight:700;line-height:1;font-family:var(--mono)}
-  .gauge-lbl{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase}
-  .bar-track{height:12px;background:var(--surface2);border-radius:6px;overflow:hidden;
-    border:1px solid var(--border);min-width:260px;flex:1}
-  .bar-fill{height:100%;border-radius:6px;transition:width .5s ease}
-  /* la tabla de detalle tiene 8 columnas: en pantalla angosta scrollea ella
-     sola en vez de apelotonar el texto */
+  .hero{display:flex;align-items:center;gap:28px;flex-wrap:wrap}
+  .gauge-num{font-size:56px;font-weight:600;line-height:1;font-family:var(--mono);letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+  .gauge-lbl{font-family:var(--mono);font-size:12px;letter-spacing:.16em;text-transform:uppercase;margin-top:6px;font-weight:600}
+  .bar-track{height:8px;background:var(--surface3);border-radius:4px;overflow:hidden;min-width:260px;flex:1}
+  .bar-fill{height:100%;border-radius:4px;transition:width .5s ease}
   .tabla-scroll{overflow-x:auto}
   table{width:100%;border-collapse:collapse;font-size:12px;min-width:520px}
-  th{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;
-    color:var(--muted);text-align:right;padding:6px 8px;border-bottom:1px solid var(--border);font-weight:400}
+  th{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);
+    text-align:right;padding:8px 10px;border-bottom:1px solid var(--border2);font-weight:500}
   th:first-child,td:first-child{text-align:left}
-  td{padding:6px 8px;border-bottom:1px solid rgba(54,58,71,.5);text-align:right;
-    font-family:var(--mono)}
+  td{padding:8px 10px;border-bottom:1px solid var(--border);text-align:right;font-family:var(--mono);font-variant-numeric:tabular-nums}
+  tbody tr{transition:background .15s}
+  tbody tr:hover{background:var(--surface2)}
   td.name{font-family:var(--sans)}
   tr:last-child td{border-bottom:none}
   .pos{color:var(--green)}.neg{color:var(--red)}.dim{color:var(--muted)}
-  .tag{font-family:var(--mono);font-size:9px;letter-spacing:.08em;padding:1px 5px;
-    border-radius:3px;border:1px solid var(--border);color:var(--muted)}
-  .tag.sig{color:var(--amber);border-color:var(--amber)}
-  .note{font-size:11px;color:var(--muted);line-height:1.6;margin-top:12px;
-    border-left:2px solid var(--border);padding-left:10px}
+  .tag{font-family:var(--mono);font-size:9px;letter-spacing:.08em;padding:1px 6px;border-radius:999px;
+    border:1px solid var(--border2);color:var(--muted)}
+  .tag.sig{color:var(--amber);border-color:rgba(242,181,68,.5)}
+  .note{font-size:12px;color:var(--muted);line-height:1.65;margin-top:14px;
+    background:var(--surface2);border-left:2px solid var(--amber);border-radius:0 6px 6px 0;padding:10px 14px}
   .note b{color:var(--amber);font-weight:600}
-  .foot{margin-top:22px;color:var(--muted);font-size:11px;line-height:1.6;
-    border-top:1px solid var(--border);padding-top:14px}
+  .foot{margin-top:24px;color:var(--muted);font-size:11px;line-height:1.7;border-top:1px solid var(--border);padding-top:16px}
   .foot code{font-family:var(--mono);color:var(--blue)}
-  .loading{padding:60px;text-align:center;color:var(--muted);font-family:var(--mono);font-size:12px}
+  .copyright{color:var(--faint);text-align:center}
+  .loading{padding:80px;text-align:center;color:var(--muted);font-family:var(--mono);font-size:12px}
   svg{display:block;width:100%;height:auto}
+  @media(max-width:700px){.wrap{padding:0 16px 48px}.topbar{padding:10px 16px;margin:0 -16px 16px}.intro h2{font-size:21px}}
 </style>
 </head>
 <body>
 <div class="wrap">
-  <header>
-    <span class="brand">war lab</span>
-    <h1>Riesgo geopolítico × rotación sectorial</h1>
+  <header class="topbar">
+    <a class="logo" href="/" aria-label="Global Flow Matrix">
+      <svg viewBox="0 0 28 28" aria-hidden="true"><rect x="1" y="1" width="26" height="26" rx="7" fill="#11141a" stroke="#2f3644"/>
+        <rect x="6" y="6" width="7" height="7" rx="1.5" fill="#2fd49a"/><rect x="15" y="6" width="7" height="7" rx="1.5" fill="#1f2430"/>
+        <rect x="6" y="15" width="7" height="7" rx="1.5" fill="#1f2430"/><rect x="15" y="15" width="7" height="7" rx="1.5" fill="#ff5d6e"/></svg>
+      <span class="logo-txt"><span class="brand">war lab</span><h1>Global Flow Matrix</h1></span>
+    </a>
     <a class="back" href="/">← volver al terminal</a>
   </header>
+
+  <div class="intro">
+    <h2>Riesgo geopolítico × rotación sectorial</h2>
+    <p>26 años de historia diaria: qué sectores ganan o pierden contra el S&amp;P 500 cuando la prensa habla de guerra. Correlación, no causalidad.</p>
+  </div>
 
   <div id="app"><div class="loading">calculando 26 años de historia…</div></div>
 
@@ -78,13 +104,13 @@
     artículos del NYT, Washington Post y Chicago Tribune (<code>1960→hoy, diario</code>).
     Precios sectoriales: SPDR <code>XLx</code> vía yfinance desde 1998.
     RORO: mismo compuesto que el terminal (<code>compute/roro.py</code>), reconstruido sobre la historia larga.
-    <div class="copyright" style="margin-top:8px;font-size:10px">© 2026 Leandro R. Bergero, Msc Finance &amp; Banking BSM-UPF</div>
+    <div class="copyright" style="margin-top:10px">© 2026 Leandro R. Bergero, Msc Finance &amp; Banking BSM-UPF</div>
   </div>
 </div>
 
 <script>
-const C={green:'#6dd26d',red:'#ff6b6b',amber:'#e8a847',blue:'#7a9ec8',purple:'#9885b8',
-         muted:'#8b8fa0',border:'#363a47',surface2:'#272934'};
+const C={green:'#2fd49a',red:'#ff5d6e',amber:'#f2b544',blue:'#5aa2ff',purple:'#a78bfa',
+         muted:'#8c95a8',border:'#232833',surface2:'#181c24'};
 const NIVEL={very_low:['MUY BAJO',C.green],low:['BAJO',C.green],moderate:['MODERADO',C.amber],
              high:['ALTO',C.red],critical:['CRÍTICO',C.red]};
 const fmt=(v,d=1)=>(v>=0?'+':'')+v.toFixed(d);
@@ -137,7 +163,7 @@ function barras(filas,campo,unidad,extra){
   s+=`<line x1="${cx}" y1="${T-6}" x2="${cx}" y2="${H-6}" stroke="${C.border}"/>`;
   filas.forEach((f,i)=>{
     const y=T+i*fila, v=f[campo], w=Math.abs(v)/max*half, col=v>=0?C.green:C.red;
-    s+=`<text x="${L-8}" y="${y+11}" fill="#dcdde3" font-size="11" text-anchor="end">${esc(f.name)}</text>`;
+    s+=`<text x="${L-8}" y="${y+11}" fill="#e7eaf0" font-size="11" text-anchor="end">${esc(f.name)}</text>`;
     s+=`<rect x="${v>=0?cx:cx-w}" y="${y+2}" width="${w}" height="13" fill="${col}" opacity=".8" rx="2"/>`;
     s+=`<text x="${VAL}" y="${y+12}" fill="${col}" font-size="10"
          text-anchor="end" font-family="var(--mono)">${fmt(v)}${unidad}</text>`;
@@ -190,7 +216,7 @@ function render(d){
       </div>
       <div class="bar-track"><div class="bar-fill" style="width:${g.percentile}%;background:${col}"></div></div>
       <div style="font-family:var(--mono);font-size:11px;color:${C.muted};line-height:1.7">
-        dato del <b style="color:#dcdde3">${g.date}</b><br>
+        dato del <b style="color:#e7eaf0">${g.date}</b><br>
         índice bruto ${g.raw} · media 30d ${g.ma30}<br>
         percentil sobre ${g.ref_start}→hoy
       </div>

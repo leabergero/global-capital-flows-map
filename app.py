@@ -130,7 +130,17 @@ def _init_scheduler():
 # ---------------------------------------------------------------------------
 @app.route("/")
 def index():
-    return send_from_directory(app.static_folder, "index.html")
+    return send_from_directory(app.static_folder, _page("index"))
+
+
+def _page(name):
+    """`?lab=N` sirve `static/{name}.labN.html` (rediseño en prueba, no versionado)
+    si existe; si no, la página de producción."""
+    lab = request.args.get("lab", "")
+    cand = f"{name}.lab{lab}.html"
+    if lab.isdigit() and os.path.exists(os.path.join(app.static_folder, cand)):
+        return cand
+    return f"{name}.html"
 
 
 @app.route("/api/snapshot")
@@ -175,7 +185,7 @@ def gpr_history():
 @app.route("/war")
 def war():
     """Laboratorio de análisis riesgo geopolítico x sectores (ver war_lab.py)."""
-    return send_from_directory(app.static_folder, "war.html")
+    return send_from_directory(app.static_folder, _page("war"))
 
 
 @app.route("/api/war/analysis")
