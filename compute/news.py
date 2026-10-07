@@ -42,6 +42,12 @@ def _sentiment(text):
     return "pos" if pos[0].start() < neg[0].start() else "neg"
 
 
+def _url(u):
+    """El link a la nota, sólo si es http(s): llega de afuera y va a un href."""
+    u = str(u or "").strip()
+    return u if u.startswith(("https://", "http://")) else ""
+
+
 def _hhmm(ts):
     try:
         return datetime.fromisoformat(str(ts).replace("Z", "")).strftime("%H:%M")
@@ -65,7 +71,7 @@ def _from_openbb(limit):
             src = getattr(it, "source", "") or "OpenBB"
             date = getattr(it, "date", "") or ""
             out.append({"t": title, "src": str(src), "time": _hhmm(date),
-                        "sent": _sentiment(title)})
+                        "sent": _sentiment(title), "url": _url(getattr(it, "url", ""))})
         return out or None
     except Exception as e:
         # 402/403/429 = feed FMP fuera del plan gratuito o límite alcanzado -> DEBUG.
@@ -92,7 +98,7 @@ def _from_fmp(limit):
         title = it.get("title") or it.get("text", "")[:120]
         out.append({"t": title, "src": it.get("site") or it.get("publisher", "FMP"),
                     "time": _hhmm(it.get("publishedDate") or it.get("date")),
-                    "sent": _sentiment(title)})
+                    "sent": _sentiment(title), "url": _url(it.get("url"))})
     return out or None
 
 
@@ -123,7 +129,8 @@ def _from_yfinance(limit):
                 src = (c.get("provider") or {}).get("displayName") or "Yahoo Finance"
                 out.append({"t": title, "src": src,
                             "time": _hhmm(c.get("pubDate")),
-                            "sent": _sentiment(title)})
+                            "sent": _sentiment(title),
+                            "url": _url((c.get("clickThroughUrl") or c.get("canonicalUrl") or {}).get("url"))})
     except Exception as e:
         log.warning("yfinance news :: %s", e)
         return None
@@ -150,7 +157,7 @@ def _from_yfinance_search(limit):
         ts = it.get("providerPublishTime")
         out.append({"t": title, "src": it.get("publisher") or "Yahoo Finance",
                     "time": datetime.fromtimestamp(ts).strftime("%H:%M") if ts else "",
-                    "sent": _sentiment(title)})
+                    "sent": _sentiment(title), "url": _url(it.get("link"))})
     return out or None
 
 
@@ -175,6 +182,7 @@ if __name__ == "__main__":
         "El petróleo cae y el dólar se desploma": "neg",
         "La empresa trabaja en un nuevo plan": "neutral",
     }
+    assert _url("javascript:alert(1)") == "" and _url("https://x.com/a") == "https://x.com/a"
     for titulo, esperado in casos.items():
         assert _sentiment(titulo) == esperado, (titulo, _sentiment(titulo), esperado)
     print("ok:", len(casos), "titulares")

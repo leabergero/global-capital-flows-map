@@ -180,6 +180,8 @@
   .news-item{display:grid;grid-template-columns:10px 1fr auto;gap:10px;align-items:start;
     padding:10px 0;border-bottom:1px solid var(--border);transition:all 0.2s ease}
   .news-item:hover{padding-left:2px}
+  a.news-item{color:inherit;text-decoration:none;cursor:pointer}
+  a.news-item:hover .news-head{text-decoration:underline}
   .news-dot{border-radius:50%;transition:all 0.2s ease}
   .news-item:hover .news-dot{filter:drop-shadow(0 0 4px currentColor);transform:scale(1.3)}
   .news-item:last-child{border-bottom:0}
@@ -1307,10 +1309,14 @@ function renderMacro(){const grid=document.getElementById('macroGrid');grid.inne
 /* ---- news ---- */
 function renderNews(){const list=document.getElementById('newsList');list.innerHTML='';
   const sc={pos:C.green,neg:C.red,neutral:C.muted};
-  (STATE.news||[]).forEach(it=>{const row=document.createElement('div');row.className='news-item';
+  // Cada titular abre la nota en otra pestaña. Título y fuente llegan de
+  // afuera: van como texto, no como HTML.
+  const txt=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  (STATE.news||[]).forEach(it=>{const row=document.createElement(it.url?'a':'div');row.className='news-item';
+    if(it.url){row.href=it.url;row.target='_blank';row.rel='noopener noreferrer';}
     row.innerHTML=`<span class="news-dot" style="background:${sc[it.sent]||C.muted}"></span>
-      <div><div class="news-head">${it.t}</div><div class="news-src">${it.src||''}</div></div>
-      <span class="news-time">${it.time||''}</span>`;list.appendChild(row);});}
+      <div><div class="news-head">${txt(it.t)}</div><div class="news-src">${txt(it.src)}</div></div>
+      <span class="news-time">${txt(it.time)}</span>`;list.appendChild(row);});}
 
 /* ---- SPY/TLT Ratio ---- */
 function renderSpyTlt(){
