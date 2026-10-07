@@ -5,6 +5,7 @@ para históricos/cotizaciones). Sentimiento heurístico por palabras clave (un
 clasificador real iría en el backend si se quisiera).
 """
 import logging
+import re
 from datetime import datetime
 
 import yfinance
@@ -15,19 +16,30 @@ import cache
 
 log = logging.getLogger("news")
 
-_POS = ("sube", "récord", "gana", "rally", "entrada", "inflow", "alza", "máximo",
-        "supera", "rises", "gains", "surge", "record", "beats", "jumps")
-_NEG = ("cae", "baja", "salida", "outflow", "pérdida", "desploma", "mínimo",
-        "falls", "drops", "loss", "plunge", "slumps", "misses")
+# Comienzos de palabra: "fall" cubre fall/falls/falling, "sub" sube/suben/subió.
+_POS = re.compile(r"\b(?:sub[eiíao]|récord|record|gan[aóa]|rall|repunt|entrada|inflow|alza|"
+                  r"máximo|supera|rise|rising|rose|gain|surg|beat|jump|climb|soar|rebound|"
+                  r"advanc|higher|boost)", re.IGNORECASE)
+_NEG = re.compile(r"\b(?:cae|caen|cayó|caíd|baja|bajan|bajó|salida|outflow|pérdida|desplom|"
+                  r"mínimo|hund|fall|fell|drop|loss|lose|plung|slump|miss|tumbl|slid|sink|"
+                  r"sank|slip|lower|crash|selloff|sell-off|retreat|declin|weak)", re.IGNORECASE)
 
 
 def _sentiment(text):
-    t = (text or "").lower()
-    if any(w in t for w in _POS):
-        return "pos"
-    if any(w in t for w in _NEG):
-        return "neg"
-    return "neutral"
+    """Positiva, negativa o neutral, por palabras clave.
+
+    Antes ganaba la primera lista que encontrara algo, y se miraba primero la
+    positiva: "futures fall after tech rally" salía positiva por "rally". Ahora
+    se cuentan las dos, y si empatan manda la que aparece primero, que en un
+    titular suele ser el hecho principal.
+    """
+    t = text or ""
+    pos, neg = list(_POS.finditer(t)), list(_NEG.finditer(t))
+    if len(pos) != len(neg):
+        return "pos" if len(pos) > len(neg) else "neg"
+    if not pos:
+        return "neutral"
+    return "pos" if pos[0].start() < neg[0].start() else "neg"
 
 
 def _hhmm(ts):
@@ -151,3 +163,18 @@ def headlines(limit=6):
     if out:
         cache.set("news:world", out, config.TTL["news"])
     return out or []
+
+
+if __name__ == "__main__":
+    casos = {
+        "Stock market today: Dow, S&P 500, Nasdaq futures fall after tech rally": "neg",
+        "Stock Market Today: Dow Tumbles 400 Points As Yields Jump; Fed Minutes On Deck": "neg",
+        "S&P 500 rallies to record as tech stocks climb": "pos",
+        "5 Things to Know Before the Stock Market Opens on Wednesday": "neutral",
+        "El Merval sube 3% y los bonos tocan máximos": "pos",
+        "El petróleo cae y el dólar se desploma": "neg",
+        "La empresa trabaja en un nuevo plan": "neutral",
+    }
+    for titulo, esperado in casos.items():
+        assert _sentiment(titulo) == esperado, (titulo, _sentiment(titulo), esperado)
+    print("ok:", len(casos), "titulares")
