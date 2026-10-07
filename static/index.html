@@ -634,12 +634,11 @@ const MACRO_TOOLTIPS={
     'Brent':'Precio del crudo Brent. Referencia internacional de crudo.',
     'Oro':'Precio del oro. Activo de refugio, sube con riesgo-off.',
     'Plata':'Precio de la plata. Metal precioso, activo de ciclo.',
-    'Plata/Oro':'Relación plata/oro. Sube en ciclos alcistas, baja con riesgo-off.',
     'UST 10Y':'Rendimiento del bono del Tesoro USA a 10 años. Guía tasas hipotecarias.',
     'DXY':'Índice dólar. Mide fortaleza del USD vs canasta de monedas.',
     'VIX':'Índice de volatilidad implícita (miedo). Sube en caídas de mercado.',
     'BTC':'Bitcoin. Activo de riesgo, correlacionado con ciclo.',
-    'Gold/Silver':'Ratio oro/plata. Media histórica 60:1. Actual 76.5:1 = plata cayendo (defensiva), oro sostenido (seguro). Sube = miedo. Baja = confianza.'
+    'Gold/Silver':'Ratio oro/plata del último año. La línea punteada es la mediana desde 2000 (68:1) y la banda, el rango habitual (52–86). Arriba de la banda = plata rezagada, miedo. Abajo = plata liderando, confianza.'
   },
   en:{
     'Fed funds':'US Federal Reserve reference rate. Guides monetary policy and the cost of credit.',
@@ -654,12 +653,11 @@ const MACRO_TOOLTIPS={
     'Brent':'Brent crude oil price. International crude oil benchmark.',
     'Oro':'Gold price. Safe-haven asset, rises with risk-off.',
     'Plata':'Silver price. Precious metal, cyclical asset.',
-    'Plata/Oro':'Silver/gold ratio. Rises in bull cycles, falls with risk-off.',
     'UST 10Y':'US 10-year Treasury yield. Guides mortgage rates.',
     'DXY':'Dollar index. Measures USD strength vs a basket of currencies.',
     'VIX':'Implied volatility index (fear gauge). Rises in market selloffs.',
     'BTC':'Bitcoin. Risk asset, correlated with the cycle.',
-    'Gold/Silver':'Gold/silver ratio. Historical average 60:1. Current 76.5:1 = silver falling (defensive), gold holding (safe). Rising = fear. Falling = confidence.'
+    'Gold/Silver':'Gold/silver ratio over the last year. The dashed line is the median since 2000 (68:1) and the band, the usual range (52–86). Above the band = silver lagging, fear. Below = silver leading, confidence.'
   },
   de:{
     'Fed funds':'Leitzins der US-Notenbank. Steuert die Geldpolitik und die Kreditkosten.',
@@ -674,12 +672,11 @@ const MACRO_TOOLTIPS={
     'Brent':'Preis für Brent-Rohöl. Internationale Rohölreferenz.',
     'Oro':'Goldpreis. Sicherer Hafen, steigt bei Risk-Off.',
     'Plata':'Silberpreis. Edelmetall, zyklischer Vermögenswert.',
-    'Plata/Oro':'Silber/Gold-Verhältnis. Steigt in Aufwärtszyklen, fällt bei Risk-Off.',
     'UST 10Y':'Rendite der 10-jährigen US-Staatsanleihe. Steuert Hypothekenzinsen.',
     'DXY':'Dollarindex. Misst die USD-Stärke gegenüber einem Währungskorb.',
     'VIX':'Index der impliziten Volatilität (Angstindex). Steigt bei Markteinbrüchen.',
     'BTC':'Bitcoin. Risikoanlage, korreliert mit dem Zyklus.',
-    'Gold/Silver':'Gold/Silber-Verhältnis. Historischer Durchschnitt 60:1. Aktuell 76,5:1 = Silber fällt (defensiv), Gold hält (sicher). Steigend = Angst. Fallend = Vertrauen.'
+    'Gold/Silver':'Gold/Silber-Verhältnis im letzten Jahr. Die gestrichelte Linie ist der Median seit 2000 (68:1), das Band die übliche Spanne (52–86). Über dem Band = Silber hinkt hinterher, Angst. Darunter = Silber führt, Vertrauen.'
   }
 };
 let LANG=localStorage.getItem('flg_lang')||'es';
@@ -1265,21 +1262,7 @@ function renderMacro(){const grid=document.getElementById('macroGrid');grid.inne
     return search(STATE.tree||{});
   };
 
-  let macroList=(STATE.macro||[]).filter(m=>m.nm!=='Plata/Oro');
-
-  const oroMacro=macroList.find(m=>m.nm==='Oro');
-  const plataMacro=macroList.find(m=>m.nm==='Plata');
-  if(oroMacro && plataMacro){
-    const oroVal=parseFloat(oroMacro.val.replace(/[$,]/g,''));
-    const plataVal=parseFloat(plataMacro.val.replace(/[$,]/g,''));
-    if(!isNaN(oroVal) && !isNaN(plataVal) && oroVal!==0 && plataVal!==0){
-      const gsRatio=oroVal/plataVal;
-      const gsChg=((gsRatio-60)/60*100).toFixed(1);
-      const gsDir=gsRatio>60?'up':gsRatio<60?'down':'flat';
-      const gsItem={nm:'Gold/Silver',val:gsRatio.toFixed(1)+':1',chg:(gsRatio>60?'+':'')+gsChg+'%',dir:gsDir,s:[]};
-      macroList.push(gsItem);
-    }
-  }
+  let macroList=(STATE.macro||[]).slice();
 
   const categories={
     'Tasas':['Fed funds','BCE depo','BoJ','PBoC LPR 1A'],
@@ -1301,13 +1284,21 @@ function renderMacro(){const grid=document.getElementById('macroGrid');grid.inne
   macroList.forEach(m=>{const card=document.createElement('div');card.className='mcard';
     const tip=document.createElement('div');tip.className='mcard-tooltip';tip.textContent=tooltips[m.nm]||trName(m.nm);
     const w=120,h=26,d=m.s||[];
-    let pts='';
+    let pts='',guia='';
     if(d.length>0){
-      const mn=Math.min(...d),mx=Math.max(...d),rng=(mx-mn)||1;
-      pts=d.map((v,i)=>`${(i/(d.length-1||1)*w).toFixed(1)},${(h-((v-mn)/rng)*h).toFixed(1)}`).join(' ');
+      // Con referencia (oro/plata) la escala incluye la banda y la mediana,
+      // para ver dónde está el ratio contra lo habitual y no sólo su forma.
+      const extra=m.ref!=null?[m.ref,...(m.band||[])]:[];
+      // Margen para que la banda no ocupe todo el alto y se vean sus bordes.
+      const pad=extra.length?(Math.max(...d,...extra)-Math.min(...d,...extra))*0.2:0;
+      const mn=Math.min(...d,...extra)-pad,mx=Math.max(...d,...extra)+pad,rng=(mx-mn)||1;
+      const y=v=>(h-((v-mn)/rng)*h).toFixed(1);
+      pts=d.map((v,i)=>`${(i/(d.length-1||1)*w).toFixed(1)},${y(v)}`).join(' ');
+      if(m.band)guia+=`<rect x="0" y="${y(m.band[1])}" width="${w}" height="${(y(m.band[0])-y(m.band[1])).toFixed(1)}" fill="${C.muted}" opacity="0.15"/>`;
+      if(m.ref!=null)guia+=`<line x1="0" x2="${w}" y1="${y(m.ref)}" y2="${y(m.ref)}" stroke="${C.muted}" stroke-width="1" stroke-dasharray="3 2"/>`;
     }
-    const col=m.dir==='up'?C.green:m.dir==='down'?C.red:C.muted;
-    const svg=`<svg class="spark" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none">${pts?`<polyline points="${pts}" fill="none" stroke="${col}" stroke-width="1.4"/>`:d.length===0?'<text x="60" y="16" text-anchor="middle" fill="#8b8fa0" font-size="10">n/d</text>':''}</svg>`;
+    const col=m.dir==='up'?C.green:m.dir==='down'?C.red:m.ref!=null?C.amber:C.muted;
+    const svg=`<svg class="spark" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none">${guia}${pts?`<polyline points="${pts}" fill="none" stroke="${col}" stroke-width="1.4"/>`:d.length===0?'<text x="60" y="16" text-anchor="middle" fill="#8b8fa0" font-size="10">n/d</text>':''}</svg>`;
     card.innerHTML=`<div class="mcard-top"><span class="mcard-nm">${trName(m.nm)}</span>
       <span class="mcard-chg ${m.dir==='up'?'up':m.dir==='down'?'down':'flat'}">${m.chg}</span></div>
       <div class="mcard-val">${m.val}</div>${svg}${tip.outerHTML}`;

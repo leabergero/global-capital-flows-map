@@ -169,7 +169,9 @@ def live_snapshot(period_days=None, lookup=None):
     macro_cards = safe("macro", macro.cards, demo["macro"])
     news_items = safe("news", lambda: news.headlines(6), demo["news"])
 
-    mode = "live" if not notes else "parcial"
+    # El COT sale una vez por semana (viernes): que no esté al día no hace
+    # parcial al resto, que sí es en vivo. Queda anotado igual en el pie.
+    mode = "live" if all(n.startswith("cot:") for n in notes) else "parcial"
     if not notes:
         notes = ["Datos en vivo vía FMP" +
                  (" + OpenBB" if _openbb_available() else "") + "."]

@@ -118,11 +118,36 @@ def _from_yfinance(limit):
     return out or None
 
 
+def _from_yfinance_search(limit):
+    """Titulares vía la búsqueda de Yahoo.
+
+    Desde octubre de 2026 `Ticker.news` vuelve vacío para todos los símbolos
+    (SPY, QQQ, AAPL…) y FMP corta con 429 en el plan gratis: el panel quedaba en
+    demo y la cabecera en "parcial". La búsqueda sí sigue respondiendo.
+    """
+    try:
+        items = yfinance.Search("stock market", news_count=limit).news or []
+    except Exception as e:
+        log.warning("yfinance search news :: %s", e)
+        return None
+    out = []
+    for it in items[:limit]:
+        title = it.get("title") or ""
+        if not title:
+            continue
+        ts = it.get("providerPublishTime")
+        out.append({"t": title, "src": it.get("publisher") or "Yahoo Finance",
+                    "time": datetime.fromtimestamp(ts).strftime("%H:%M") if ts else "",
+                    "sent": _sentiment(title)})
+    return out or None
+
+
 def headlines(limit=6):
     cached = cache.get("news:world")
     if cached is not None:
         return cached
-    out = _from_openbb(limit) or _from_fmp(limit) or _from_yfinance(limit)
+    out = (_from_openbb(limit) or _from_fmp(limit) or _from_yfinance(limit)
+           or _from_yfinance_search(limit))
     if out:
         cache.set("news:world", out, config.TTL["news"])
     return out or []

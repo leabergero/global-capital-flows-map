@@ -173,7 +173,12 @@ MACRO_CARDS = [
     {"nm": "UST 10Y",       "kind": "quote", "symbol": "^TNX", "alt": ["IEF"], "unit": "%"},
     {"nm": "Oro",           "kind": "quote", "symbol": "GCUSD", "alt": ["GLD"], "unit": "$"},
     {"nm": "Plata",         "kind": "quote", "symbol": "SIUSD", "alt": ["SLV"], "unit": "$"},
-    {"nm": "Plata/Oro",     "kind": "ratio", "a": "SIUSD", "b": "GCUSD", "unit": "ratio", "alt_a": ["SLV"], "alt_b": ["GLD"]},
+    # Mediana y rango habitual (percentiles 10-90) del ratio diario GC=F/SI=F
+    # desde 2000-08-30, medidos el 2026-10-07 sobre 6.549 ruedas. La media
+    # (69,2) casi no se mueve año a año; el "60:1" que se suele citar es del
+    # siglo XX y no describe estos 26 años.
+    {"nm": "Gold/Silver",   "kind": "ratio", "a": "GCUSD", "b": "SIUSD", "unit": "ratio", "alt_a": ["GLD"], "alt_b": ["SLV"],
+     "ref": 68.4, "band": [52.0, 86.0]},
     {"nm": "DXY",           "kind": "quote", "symbol": "^DXY", "alt": ["DX", "UUP"], "unit": ""},
     {"nm": "VIX",           "kind": "quote", "symbol": "^VIX", "alt": ["VIXY"], "unit": ""},
     {"nm": "BTC",           "kind": "quote", "symbol": "BTCUSD", "unit": "$"},

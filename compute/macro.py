@@ -15,14 +15,18 @@ log = logging.getLogger("macro")
 
 
 def _spark(values, points=12):
-    """Submuestrea a 'points' valores para el sparkline."""
+    """Submuestrea a 'points' valores para el sparkline, del primero al último.
+
+    Antes saltaba de a len/points y el último punto nunca entraba: con 320
+    ruedas el sparkline del oro terminaba en 4.497 con el precio en 4.192.
+    """
     vals = [v for v in values if v is not None]
     if not vals:
         return []
     if len(vals) <= points:
         return [round(float(v), 4) for v in vals]
-    step = len(vals) / points
-    return [round(float(vals[int(i * step)]), 4) for i in range(points)]
+    paso = (len(vals) - 1) / (points - 1)
+    return [round(float(vals[round(i * paso)]), 4) for i in range(points)]
 
 
 def _fmt(value, unit):
@@ -78,14 +82,29 @@ def _price_of(sym, alts):
 
 
 def _ratio_card(card):
-    """Tarjeta de cociente entre dos símbolos (ej: Plata/Oro)."""
+    """Tarjeta de cociente entre dos símbolos (ej: oro/plata).
+
+    La serie es el cociente rueda a rueda de los dos históricos, en las fechas
+    que tienen en común, y termina en el cociente de las cotizaciones de hoy.
+    Con `ref` (la mediana histórica) la variación es la distancia a ella, y la
+    dirección sólo se marca fuera de `band`, el rango habitual.
+    """
     pa = _price_of(card["a"], card.get("alt_a"))
     pb = _price_of(card["b"], card.get("alt_b"))
     if pa is None or pb is None or pb == 0:
         return {"nm": card["nm"], "val": "n/d", "chg": "—", "dir": "flat", "s": []}
     ratio = pa / pb
-    return {"nm": card["nm"], "val": _fmt(ratio, card.get("unit", "ratio")),
-            "chg": "—", "dir": "flat", "s": [round(ratio, 4)]}
+    cb = {b["date"]: b["close"] for b in (fmp.historical(card["b"]) or []) if b.get("close")}
+    serie = [b["close"] / cb[b["date"]] for b in (fmp.historical(card["a"]) or [])
+             if b.get("close") and b["date"] in cb]
+    out = {"nm": card["nm"], "val": f"{ratio:.1f}:1", "chg": "—", "dir": "flat",
+           "s": _spark(serie[-252:] + [ratio], 40)}
+    ref, band = card.get("ref"), card.get("band")
+    if ref:
+        out.update(ref=ref, band=band, chg=f"{(ratio / ref - 1) * 100:+.1f}%")
+        if band:
+            out["dir"] = "up" if ratio > band[1] else "down" if ratio < band[0] else "flat"
+    return out
 
 
 def _econ_series_fmp(name):
