@@ -18,7 +18,7 @@
     --mono:"Fira Code",ui-monospace,"SF Mono",Menlo,Consolas,monospace;
     --sans:"Fira Sans",ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
     --r:10px; --gap:14px;
-    --z-tile:10; --z-tip:50; --z-fixed:60;
+    --z-tile:10; --z-fixed:60; --z-tip:70; /* tip sobre la topbar: si no, queda bajo su fondo translúcido */
   }
   *{box-sizing:border-box}
   html,body{margin:0;background:var(--bg);color:var(--text);font-family:var(--sans);
@@ -30,7 +30,9 @@
   :focus-visible{outline:2px solid var(--blue);outline-offset:2px;border-radius:4px}
   @keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
   @keyframes pulse{0%,100%{opacity:1}50%{opacity:.45}}
-  .panel,.stat{animation:fadeIn .45s ease-out both}
+  /* backwards, no both: con fill final cada tarjeta queda como stacking context
+     propio y sus tooltips no pueden salir por encima de las tarjetas vecinas. */
+  .panel,.stat{animation:fadeIn .45s ease-out backwards}
   @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 
   .wrap{max-width:1440px;margin:0 auto;padding:0 20px 60px}
@@ -148,7 +150,7 @@
   .gpr-track{height:6px;background:var(--surface3);border-radius:3px;overflow:hidden;margin-top:8px}
   .gpr-fill{height:100%;border-radius:3px;transition:width .6s ease;box-shadow:none!important}
   .gpr-date{font-family:var(--mono);font-size:10px;color:var(--faint);margin-top:6px}
-  #gprTip{position:fixed;z-index:var(--z-fixed)}
+  #gprTip{position:fixed;z-index:var(--z-tip)}
 
   /* ---- paneles ---- */
   .grid-main{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:var(--gap);margin-bottom:var(--gap)}
@@ -196,7 +198,7 @@
   .crumb-sep{color:var(--faint)}
   .hm-spacer{flex:1}
   .metric-label{font-family:var(--mono);font-size:10px;letter-spacing:.14em;color:var(--faint);text-transform:uppercase}
-  #metricSeg .tooltip{left:0;right:auto;width:240px}
+  #metricSeg .tooltip{right:0;left:auto;width:240px} /* el seg está pegado al borde derecho */
   .heatmap{display:flex;flex-wrap:wrap;gap:4px;align-content:flex-start}
   .tile{position:relative;border-radius:6px;padding:10px 12px;cursor:pointer;min-height:72px;
     display:flex;flex-direction:column;justify-content:space-between;z-index:1;
