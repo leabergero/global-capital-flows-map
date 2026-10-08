@@ -93,13 +93,15 @@
   .seg-period button.on{color:var(--blue);box-shadow:inset 0 0 0 1px rgba(90,162,255,.45)}
   #metricSeg{overflow:visible}
   #metricSeg button:hover .tooltip{display:block}
+  #metricSeg button:hover{z-index:2} /* cada button es su propia capa (z-index:1): sin esto, los vecinos tapan el tooltip */
   #periodSegHM{display:none} /* un único control de ventana global, en la barra superior */
 
   /* ---- tooltips ---- */
   .tooltip{display:none;position:absolute;bottom:100%;right:0;background:var(--surface3);
     border:1px solid var(--border2);border-radius:8px;padding:10px 12px;font-size:11px;color:var(--text);
     width:280px;z-index:var(--z-tip);margin-bottom:8px;font-family:var(--sans);font-weight:400;
-    line-height:1.5;letter-spacing:0;text-transform:none;box-shadow:0 12px 32px rgba(0,0,0,.5);text-align:left}
+    line-height:1.5;letter-spacing:0;text-transform:none;box-shadow:0 12px 32px rgba(0,0,0,.5);text-align:left;
+    white-space:normal} /* dentro de un .seg button heredaba nowrap: una sola línea */
   .panel-head:hover>.tooltip{display:block}
   .regime-info:hover .tooltip,.stat-spy:hover .tooltip{display:block}
 
@@ -150,7 +152,7 @@
   .gpr-track{height:6px;background:var(--surface3);border-radius:3px;overflow:hidden;margin-top:8px}
   .gpr-fill{height:100%;border-radius:3px;transition:width .6s ease;box-shadow:none!important}
   .gpr-date{font-family:var(--mono);font-size:10px;color:var(--faint);margin-top:6px}
-  #gprTip{position:fixed;z-index:var(--z-tip)}
+  #gprTip{position:fixed;z-index:var(--z-tip);bottom:auto;right:auto;margin:0} /* JS fija top/left; el bottom:100% heredado colapsaba el alto */
 
   /* ---- paneles ---- */
   .grid-main{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:var(--gap);margin-bottom:var(--gap)}
